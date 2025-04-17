@@ -1,0 +1,17 @@
+[
+  {
+    "text": "테스트합니다.",
+    "active": false,
+    "timestamp": "2025-04-16T05:24:25.184Z"
+  },
+  {
+    "text": "공지",
+    "active": false,
+    "timestamp": "2025-04-16T05:26:12.567Z"
+  },
+  {
+    "text": "공지",
+    "active": true,
+    "timestamp": "2025-04-16T06:23:57.777Z"
+  }
+]
