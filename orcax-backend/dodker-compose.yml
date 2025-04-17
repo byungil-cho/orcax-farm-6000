@@ -1,0 +1,10 @@
+services:
+  backend:
+    build:
+      context: ./orcax-backend
+      dockerfile: Dockerfile
+    container_name: orcax-backend
+    ports:
+      - "3000:3000"
+
+CMD ["node", "server.js"]

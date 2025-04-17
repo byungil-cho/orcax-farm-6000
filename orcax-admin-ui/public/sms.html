@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrcaX 문자 발송</title>
+  <style>
+    body { background-color: #111; color: #fff; font-family: Arial, sans-serif; padding: 2rem; }
+    h1 { color: #00ffc3; text-align: center; }
+    .container { max-width: 500px; margin: 0 auto; background: #222; padding: 2rem; border-radius: 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; color: #00ffc3; }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.5rem;
+      border-radius: 0.5rem;
+      border: none;
+      background-color: #111;
+      color: #fff;
+      font-size: 1rem;
+    }
+    textarea { height: 100px; resize: none; }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.8rem 1.5rem;
+      background: linear-gradient(135deg, #00ffc3, #00b2ff);
+      color: #111;
+      font-weight: bold;
+      font-size: 1rem;
+      border: none;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    button:hover { transform: scale(1.05); }
+    .status { margin-top: 1rem; font-weight: bold; color: #ffeb3b; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>📨 OrcaX 문자 발송</h1>
+  <div class="container">
+    <label for="phone">수신자 전화번호 (쉼표로 구분 가능)</label>
+    <input type="text" id="phone" placeholder="예: 01012345678,01087654321" />
+
+    <label for="message">메시지 내용</label>
+    <textarea id="message" placeholder="보낼 문자를 입력하세요"></textarea>
+
+    <button onclick="sendSMS()">문자 발송</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    async function sendSMS() {
+      const phone = document.getElementById("phone").value.trim();
+      const msg = document.getElementById("message").value.trim();
+      const status = document.getElementById("status");
+
+      if (!phone || !msg) {
+        status.textContent = "⚠️ 전화번호와 메시지를 모두 입력하세요.";
+        status.style.color = "yellow";
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:3001/api/sms/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: phone, message: msg })
+        });
+
+        const result = await response.json();
+
+        if (result.result_code === "1" || result.result_code === 1) {
+          status.textContent = "✅ 문자 전송 성공!";
+          status.style.color = "lime";
+        } else {
+          status.textContent = "❌ 문자 전송 실패: " + (result.message || "에러 발생");
+          status.style.color = "yellow";
+        }
+
+      } catch (error) {
+        status.textContent = "🚫 서버 오류로 문자 전송 실패.";
+        status.style.color = "red";
+        console.error("💥 문자 요청 중 오류:", error);
+      }
+    }
+  </script>
+</body>
+</html>

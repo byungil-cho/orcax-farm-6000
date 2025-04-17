@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공지사항 등록</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #111; color: #fff; padding: 2rem; }
+    h1 { color: #00ffc3; text-align: center; }
+    .notice-form { max-width: 600px; margin: 0 auto; background: #222; padding: 2rem; border-radius: 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; color: #00ffc3; }
+    input[type="text"] {
+      width: 100%; padding: 0.6rem; border: none; border-radius: 0.5rem; background: #111; color: #fff; margin-top: 0.5rem;
+    }
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+    button {
+      margin-top: 2rem; padding: 0.8rem 1.5rem; background: #00ffc3; color: #111; font-weight: bold; border: none; border-radius: 1rem; cursor: pointer;
+    }
+    .notice-list { margin-top: 2rem; background: #1c1c1c; padding: 1rem; border-radius: 0.5rem; }
+    .notice-item { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>📢 공지사항 등록 및 관리</h1>
+  <div class="notice-form">
+    <label>공지 내용:
+      <input type="text" id="noticeText" placeholder="공지 내용을 입력하세요" />
+    </label>
+    <label>
+      <input type="checkbox" id="noticeActive" /> 공지사항 띠에 표시
+    </label>
+    <button onclick="saveNotice()">저장</button>
+
+    <div class="notice-list" id="noticeList">
+      <h2>📋 등록된 공지 목록</h2>
+      <div id="notices"></div>
+    </div>
+  </div>
+
+  <script>
+    async function saveNotice() {
+      const text = document.getElementById('noticeText').value;
+      const active = document.getElementById('noticeActive').checked;
+      if (!text) return alert("공지 내용을 입력하세요");
+
+      const newNotice = { text, active, timestamp: new Date().toISOString() };
+
+      const res = await fetch('/api/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNotice)
+      });
+
+      if (res.ok) {
+        alert("공지사항이 저장되었습니다.");
+        document.getElementById('noticeText').value = '';
+        document.getElementById('noticeActive').checked = false;
+        loadNotices();
+      } else {
+        alert("저장 실패. 서버를 확인하세요.");
+      }
+    }
+
+    async function loadNotices() {
+      const res = await fetch('/api/notices');
+      const list = await res.json();
+      const container = document.getElementById('notices');
+      container.innerHTML = list.map(n => `
+        <div class="notice-item">
+          <strong>${n.active ? '✅ 표시됨' : '❌ 숨김'}:</strong> ${n.text}<br />
+          <small>${new Date(n.timestamp).toLocaleString()}</small>
+        </div>
+      `).join('');
+    }
+
+    loadNotices();
+  </script>
+</body>
+</html>

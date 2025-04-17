@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🔍 로그인 기록</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 2rem;
+    }
+    h1 {
+      color: #00ffc3;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      border: 1px solid #00ffc3;
+      text-align: center;
+    }
+    th {
+      background-color: #00ffc3;
+      color: #111;
+    }
+    button {
+      background-color: #00ffc3;
+      color: #111;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      margin-top: 1rem;
+      border-radius: 1rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 로그인 기록</h1>
+  <div style="text-align:center">
+    <button onclick="fetchLog()">🔄 기록 새로고침</button>
+  </div>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>시간</th>
+        <th>유형</th>
+        <th>IP 주소</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function fetchLog() {
+      const res = await fetch('/data/login-log.json');
+      const data = await res.json();
+      const tbody = document.querySelector('#logTable tbody');
+      tbody.innerHTML = '';
+
+      data.reverse().forEach(entry => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${new Date(entry.time).toLocaleString()}</td>
+          <td>${entry.type}</td>
+          <td>${entry.ip}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    fetchLog(); // 처음에도 한번 호출
+  </script>
+</body>
+</html>

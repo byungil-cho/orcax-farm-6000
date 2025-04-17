@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문자 발송 이력</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 2rem;
+    }
+    h1 {
+      color: #00ffc3;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+    th, td {
+      border: 1px solid #00ffc3;
+      padding: 0.8rem;
+      text-align: left;
+    }
+    th {
+      background-color: #1e1e1e;
+      color: #00ffc3;
+    }
+    tr:nth-child(even) {
+      background-color: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>📨 문자 발송 이력</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>수신자</th>
+        <th>내용</th>
+        <th>발송 시간</th>
+        <th>결과 코드</th>
+      </tr>
+    </thead>
+    <tbody id="logTable">
+      <!-- 로그가 여기에 들어감 -->
+    </tbody>
+  </table>
+
+  <script>
+    async function loadLogs() {
+      const res = await fetch('/api/sms-log');
+      const logs = await res.json();
+      const table = document.getElementById('logTable');
+      table.innerHTML = logs.map(log => `
+        <tr>
+          <td>${log.to}</td>
+          <td>${log.message}</td>
+          <td>${new Date(log.timestamp).toLocaleString()}</td>
+          <td>${log.result_code}</td>
+        </tr>
+      `).join('');
+    }
+    loadLogs();
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFT 거래 완료 문자 전송</title>
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background: #f9fafb;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 480px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 2rem;
+    }
+    input, button {
+      width: 100%;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    button {
+      background: #22c55e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .log {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #444;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>NFT 거래 완료 문자 전송</h2>
+    <input id="buyerName" placeholder="구매자 이름" />
+    <input id="buyerPhone" placeholder="구매자 전화번호 (숫자만)" />
+    <input id="qty" type="number" placeholder="전송 수량" />
+    <button onclick="sendConfirm()">문자 전송</button>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    async function sendConfirm() {
+      const buyerName = document.getElementById("buyerName").value.trim();
+      const buyerPhone = document.getElementById("buyerPhone").value.trim();
+      const qty = parseInt(document.getElementById("qty").value);
+      const log = document.getElementById("log");
+      log.textContent = "";
+
+      if (!buyerName || !buyerPhone || !qty || isNaN(qty)) {
+        alert("모든 항목을 정확히 입력하세요.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/api/confirm-delivery", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ buyerName, buyerPhone, qty })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          log.textContent = "✅ 거래 완료 문자 전송 성공!";
+        } else {
+          log.textContent = "❌ 실패: " + result.message;
+        }
+      } catch (err) {
+        log.textContent = "⚠️ 오류 발생: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

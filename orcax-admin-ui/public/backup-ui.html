@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>파일 백업 다운로드</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #00ffc3;
+    }
+    button {
+      background-color: #00ffc3;
+      color: #111;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      margin: 1rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+    button:hover {
+      background-color: #00b2ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🗂 파일 백업 다운로드</h1>
+  <div>
+    <button onclick="downloadFile('orders')">📦 주문내역 (orders.json)</button>
+    <button onclick="downloadFile('sms')">📨 문자이력 (sms-log.json)</button>
+    <button onclick="downloadFile('spins')">🎰 룰렛점수 (spins.json)</button>
+    <button onclick="downloadFile('notices')">📢 공지사항 (notice.json)</button>
+  </div>
+
+  <script>
+    function downloadFile(type) {
+      const url = `/api/backup/${type}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  </script>
+</body>
+</html>

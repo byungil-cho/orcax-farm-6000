@@ -1,0 +1,18 @@
+[
+  {
+    "name": "김유저",
+    "phone": "01012345678",
+    "wallet": "8MGzK3NgAwuyxFfpM5g6AETPvj...",
+    "qty": "2",
+    "nft": "OrcaX 18000 ORCX 쿠폰",
+    "timestamp": "2025-04-14T14:58:00.000Z"
+  },
+  {
+    "name": "박NFT",
+    "phone": "01099998888",
+    "wallet": "DSpJd2Rxer7jknZnXvpbQQq3...",
+    "qty": "1",
+    "nft": "OrcaX 20000 ORCX 쿠폰",
+    "timestamp": "2025-04-14T15:00:00.000Z"
+  }
+]
