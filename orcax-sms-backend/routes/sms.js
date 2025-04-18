@@ -1,4 +1,3 @@
-// routes/sms.js
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
@@ -8,7 +7,7 @@ require('dotenv').config();
 
 const LOG_PATH = path.join(__dirname, '../data/sms-log.json');
 
-// 🔐 인증 미들웨어 추가
+// 🔐 인증 미들웨어
 router.use((req, res, next) => {
   const key = req.headers['x-api-key'];
   if (key !== process.env.SMS_API_KEY) {
@@ -17,6 +16,7 @@ router.use((req, res, next) => {
   next();
 });
 
+// 📨 기본 문자 전송
 router.post('/send', async (req, res) => {
   const { to, message } = req.body;
   if (!to || !message) {
@@ -78,6 +78,36 @@ router.post('/send', async (req, res) => {
       message: '서버 오류로 문자 전송 실패',
       error: err.message
     });
+  }
+});
+
+// 🧾 NFT 주문 알림 문자 전송
+router.post('/order-notice', async (req, res) => {
+  const { name, phone, wallet, qty, nft } = req.body;
+  if (!phone || !nft) {
+    return res.status(400).json({ message: '필수 정보 누락' });
+  }
+
+  const message = `[OrcaX NFT 주문]
+이름: ${name}
+수량: ${qty}
+지갑: ${wallet}
+상품: ${nft}`;
+
+  try {
+    const payload = new URLSearchParams();
+    payload.append('key', process.env.ALIGO_API_KEY);
+    payload.append('user_id', process.env.ALIGO_USER_ID);
+    payload.append('sender', process.env.ALIGO_SENDER);
+    payload.append('receiver', phone);
+    payload.append('msg', message);
+    payload.append('testmode_yn', process.env.ALIGO_TEST_MODE || 'Y');
+
+    const response = await axios.post('https://apis.aligo.in/send/', payload);
+    res.json(response.data);
+  } catch (err) {
+    console.error('NFT 주문 문자 전송 실패:', err.message);
+    res.status(500).json({ message: '문자 전송 실패', error: err.message });
   }
 });
 
