@@ -1,25 +1,18 @@
-require('dotenv').config();
-const express = require('express');
-const bodyParser = require('body-parser');
-const axios = require('axios');
-const nodemailer = require('nodemailer');
+rrequire("dotenv").config();
+const express = require("express");
+const bodyParser = require("body-parser");
+const smsRoutes = require("./routes/sms");
 
 const app = express();
 const PORT = process.env.PORT || 3004;
 
 app.use(bodyParser.json());
+app.use("/api", smsRoutes);
 
-const sendSMS = async (to, message) => {
-  const res = await axios.post('https://apis.aligo.in/send/', null, {
-    params: {
-      key: process.env.SMS_API_KEY,
-      user_id: process.env.ALIGO_USER_ID,
-      sender: process.env.ALIGO_SENDER,
-      receiver: to,
-      msg: message,
-      msg_type: 'SMS'
-    }
-  });
+app.listen(PORT, () => {
+  console.log(`✅ OrcaX 알림 서버 실행 중 (포트 ${PORT})`);
+});
+
   return res.data;
 };
 
