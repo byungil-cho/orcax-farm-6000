@@ -2,11 +2,14 @@ module.exports = {
   apps: [
     {
       name: "orcax-sms-backend",
-      script: "server.js",
+      script: "./server.js", // ✅ 실제 실행할 진입점 파일!
+      watch: true,
       env: {
-        PORT: 3004,
-        SMS_API_KEY: "orcax_super_secret_key_2025"
+        NODE_ENV: "development"
+      },
+      env_production: {
+        NODE_ENV: "production"
       }
     }
   ]
-};
+}
