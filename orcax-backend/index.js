@@ -1,5 +1,4 @@
-// index.js
-import app from './server.js'; // server.js가 export 된 경우
+import app from './server.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -7,5 +6,5 @@ dotenv.config();
 const port = process.env.PORT || 3001;
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`✅ Server is running on port ${port}`);
 });
