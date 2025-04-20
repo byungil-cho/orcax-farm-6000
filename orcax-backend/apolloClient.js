@@ -2,7 +2,7 @@
 import { ApolloClient, InMemoryCache } from "@apollo/client";
 
 const client = new ApolloClient({
-  uri: "https://orcax-backend.onrender.com/graphql", // 실제 GraphQL 백엔드 주소로 수정
+  uri: "https://orcax-backend.onrender.com/graphql", // 실제 백엔드 GraphQL 주소
   cache: new InMemoryCache({
     typePolicies: {
       OwnerUsage: {
@@ -11,6 +11,10 @@ const client = new ApolloClient({
           return {
             ...existing,
             ...incoming,
+            usage: {
+              ...existing?.usage,
+              ...incoming?.usage,
+            },
           };
         },
       },
