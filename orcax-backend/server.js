@@ -1,12 +1,15 @@
-import express from 'express';
-import cors from 'cors';
+import { ApolloServer } from 'apollo-server-express'
+import express from 'express'
+import cors from 'cors'
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express()
+app.use(cors())
 
-app.get('/', (req, res) => {
-  res.send('✅ 서버 정상 작동 중입니다.');
-});
+const server = new ApolloServer({ typeDefs, resolvers })
+await server.start()
+server.applyMiddleware({ app, path: '/graphql' })
 
-export default app;
+app.listen(3001, () => {
+  console.log('✅ Server is running on port 3001')
+})
+
