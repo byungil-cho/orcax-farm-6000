@@ -1,14 +1,21 @@
-import { ApolloServer } from 'apollo-server-express'
-import express from 'express'
-import cors from 'cors'
+import express from 'express';
+import cors from 'cors';
 
-const app = express()
-app.use(cors())
+const app = express();
 
-const server = new ApolloServer({ typeDefs, resolvers })
-await server.start()
-server.applyMiddleware({ app, path: '/graphql' })
+// 미들웨어 등록
+app.use(cors());
+app.use(express.json());
 
-app.listen(3001, () => {
-  console.log('✅ Server is running on port 3001')
-})
+// 기본 라우터 예시
+app.get('/', (req, res) => {
+  res.send('API is working!');
+});
+
+// POST 예시
+app.post('/order', (req, res) => {
+  console.log('받은 데이터:', req.body);
+  res.status(200).json({ message: 'Order received!' });
+});
+
+export default app;
