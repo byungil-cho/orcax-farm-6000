@@ -1,5 +1,3 @@
-// index.js 또는 App.js
-
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
