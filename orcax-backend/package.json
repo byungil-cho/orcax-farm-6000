@@ -1,16 +1,14 @@
 {
-  "name": "orcax-백엔드",
+  "name": "orcax-alert-system",
   "version": "1.0.0",
-  "main": "server.js",
-  "type": "commonjs",
+  "description": "ORCX 토큰 입금 시 이메일, 문자, 텔레그램 알림 시스템",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2"
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "nodemailer": "^6.9.1"
   }
 }
-
