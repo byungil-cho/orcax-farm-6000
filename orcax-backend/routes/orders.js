@@ -1,14 +1,33 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 
-router.post('/', (req, res) => {
-  const { name, phone, wallet, quantity, price } = req.body;
+// 필요 시 경로 수정
+const { sendTelegramMessage } = require('../utils/telegram'); // or wherever it lives
 
-  console.log('📦 주문 수신됨:', { name, phone, wallet, quantity, price });
+// 주문 처리 라우터
+router.post('/order', async (req, res) => {
+  const order = req.body;
 
-  // 여기서 SMS 전송, DB 저장, NFT 처리 등 백엔드 로직 수행 가능
-  // 예시로는 성공 메시지만 반환
-  res.json({ success: true });
+  try {
+    // 문자 발송 요청 (3003번 서버로 전달)
+    await axios.post('http://localhost:3003/api/sms/order-notice', order);
+
+    // 텔레그램 메시지 발송
+    await sendTelegramMessage(`
+📢 [OrcaX 주문 알림]
+🧑‍💻 이름: ${order.name}
+📦 수량: ${order.qty}
+📱 연락처: ${order.phone}
+🪙 지갑: ${order.wallet}
+⏰ 시간: ${new Date().toLocaleString()}
+    `);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('알림 전송 실패:', err.message);
+    res.status(500).json({ error: '알림 전송 실패' });
+  }
 });
-
 module.exports = router;
+
