@@ -8,16 +8,20 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-const ordersRouter = require('./routes/orders');
-app.use('/orders', ordersRouter);
+// ✔️ 경로명 수정: routes → 경로
+const ordersRouter = require('./경로/orders');
+
 app.use(cors());
 app.use(bodyParser.json());
 
-// 테스트용 기본 라우터
+// REST API 경로 등록
+app.use('/orders', ordersRouter);
+
+// 테스트 라우터
 app.get('/', (req, res) => {
   res.send('Hello from OrcaX backend, where dreams go to debug.');
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`✅ Server is running on port ${port}`);
 });
