@@ -1,7 +1,16 @@
-import app from './server.js';
+// index.js 또는 App.js
 
-const PORT = process.env.PORT || 3001;
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
 
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-});
+import { ApolloProvider } from "@apollo/client";
+import client from "./apolloClient"; // 👈 위 파일 경로에 맞게 바꿔
+
+ReactDOM.render(
+  <ApolloProvider client={client}>
+    <App />
+  </ApolloProvider>,
+  document.getElementById("root")
+);
+
