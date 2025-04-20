@@ -1,4 +1,9 @@
 {
+  {
+  ...
+  "type": "module"
+}
+
   "name": "orcax-full-alert-backend",
   "version": "1.0.0",
   "main": "server.js",
