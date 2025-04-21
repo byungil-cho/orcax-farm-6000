@@ -1,15 +1,16 @@
 {
-  "name": "orcax-alert-system",
+  "name": "orcax-alert-backend",
   "version": "1.0.0",
-  "description": "ORCX 토큰 입금 시 이메일, 문자, 텔레그램 알림 시스템",
+  "description": "ORCX 주문 알림 백엔드 서버",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.73.3",
-    "dotenv": "^16.0.3",
-    "nodemailer": "^6.9.1",
-    "axios": "^1.4.0"
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "@solana/web3.js": "^1.88.0",
+    "nodemailer": "^6.9.4"
   }
 }
