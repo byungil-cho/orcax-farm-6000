@@ -1,10 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');  // ✅ CORS 추가
 const app = express();
 const { Connection, PublicKey } = require('@solana/web3.js');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 
+// ✅ CORS 미들웨어 등록
+app.use(cors());
 app.use(express.json());
 
 app.post('/order', (req, res) => {
@@ -20,6 +23,7 @@ app.post('/order', (req, res) => {
 
 const connection = new Connection('https://api.mainnet-beta.solana.com');
 const sellerWallet = new PublicKey('VxuxprfZzUuUonU7cBJtGngs1LGF5DcqR4iRFKWp7DZ');
+
 connection.onAccountChange(sellerWallet, () => {
   console.log('💸 ORCX 입금 감지됨! 알림 전송 시작...');
   sendEmail();
