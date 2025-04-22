@@ -1,3 +1,4 @@
+import cors from 'cors';
 import 'dotenv/config.js';
 import express from 'express';
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -5,6 +6,7 @@ import nodemailer from 'nodemailer';
 import axios from 'axios';
 
 const app = express();
+app.use(cors()); 
 app.use(express.json());
 
 app.post('/order', (req, res) => {
