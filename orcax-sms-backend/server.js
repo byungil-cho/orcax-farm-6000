@@ -1,27 +1,22 @@
-// server.js
-import dotenv from 'dotenv';
-dotenv.config();
+// server.js (CommonJS 기반)
 
-require("dotenv").config();
 const express = require('express');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // ✅ CORS 불러오기
+const cors = require('cors');
+const axios = require('axios');
+const nodemailer = require('nodemailer');
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3010;
 
-app.use(cors()); // ✅ CORS 설정 적용
-
+app.use(cors());
 app.use(bodyParser.json());
 
-// 여기부터 라우터, 엔드포인트 등등
 app.get('/api/test', (req, res) => {
   res.send('CORS 설정 성공!');
-});
-app.listen(3010, () => {
-  console.log('서버가 3010번 포트에서 실행 중입니다.');
 });
 
 const sendSMS = async (phone, msg) => {
@@ -34,7 +29,7 @@ const sendSMS = async (phone, msg) => {
     title: '📢 ORCX 주문 알림'
   }));
 
-  return res.data;// ✅ 수정된 부분
+  return response.data;
 };
 
 const sendEmail = async (subject, text) => {
@@ -71,11 +66,6 @@ app.post('/api/notify', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-app.listen(PORT, () => {
-  console.log(`🚀 알림 서버가 포트 ${PORT}에서 실행 중입니다.`);
-});
-
 
 app.listen(PORT, () => {
   console.log(`🚀 알림 서버가 포트 ${PORT}에서 실행 중입니다.`);
