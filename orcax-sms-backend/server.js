@@ -1,19 +1,25 @@
-rrequire("dotenv").config();
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
-const smsRoutes = require("./routes/sms");
+const nodemailer = require("nodemailer");
+const axios = require("axios");
 
 const app = express();
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.PORT || 3010;
 
 app.use(bodyParser.json());
-app.use("/api", smsRoutes);
 
-app.listen(PORT, () => {
-  console.log(`✅ OrcaX 알림 서버 실행 중 (포트 ${PORT})`);
-});
+const sendSMS = async (phone, msg) => {
+  const response = await axios.post('https://apis.aligo.in/send/', new URLSearchParams({
+    key: process.env.ALIGO_API_KEY,
+    user_id: process.env.ALIGO_USER_ID,
+    sender: process.env.ALIGO_SENDER,
+    receiver: phone,
+    msg,
+    title: '📢 ORCX 주문 알림'
+  }));
 
-  return res.data;
+  return response.data; // ✅ 수정된 부분
 };
 
 const sendEmail = async (subject, text) => {
@@ -54,3 +60,4 @@ app.post('/api/notify', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 알림 서버가 포트 ${PORT}에서 실행 중입니다.`);
 });
+
