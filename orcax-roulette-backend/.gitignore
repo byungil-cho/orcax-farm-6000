@@ -1,0 +1,24 @@
+# Node.js stuff
+node_modules/
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS nonsense
+.DS_Store
+Thumbs.db
+
+# Render/Deploy junk (just in case)
+*.rdb
+.dump
+.env.local
+.env.development
+.env.production
+
+# VSCode configs (optional)
+.vscode/
