@@ -30,8 +30,8 @@ start();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: '당신의이메일@gmail.com',  // 본인 Gmail
-    pass: '앱비밀번호'               // 발급받은 16자리 앱 비밀번호
+    user: '당신의이메일@gmail.com',  // 본인 Gmail 주소
+    pass: '앱비밀번호'                // Gmail 앱 비밀번호
   }
 });
 
@@ -65,6 +65,24 @@ app.post('/api/login', async (req, res) => {
     res.json({ success: true, message: "✅ 로그인 성공" });
   } catch (err) {
     console.error('❌ 로그인 오류:', err);
+    res.status(500).json({ success: false, message: "❌ 서버 오류" });
+  }
+});
+
+// 비밀번호 찾기 API 추가 (NEW)
+app.get('/api/find-password', async (req, res) => {
+  try {
+    const { wallet } = req.query;
+    if (!wallet) {
+      return res.status(400).json({ success: false, message: "❌ 지갑 주소를 입력하세요" });
+    }
+    const user = await users.findOne({ wallet });
+    if (!user) {
+      return res.json({ success: false, message: "❌ 등록된 지갑 주소가 없습니다" });
+    }
+    res.json({ success: true, password: user.password });
+  } catch (error) {
+    console.error('❌ 비밀번호 찾기 오류:', error);
     res.status(500).json({ success: false, message: "❌ 서버 오류" });
   }
 });
@@ -107,7 +125,7 @@ app.post('/api/send-reset-password', async (req, res) => {
   }
 });
 
-// 비밀번호 변경 API
+// 비밀번호 재설정 API
 app.post('/api/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -132,4 +150,3 @@ app.post('/api/reset-password', async (req, res) => {
     res.status(500).json({ success: false, message: "❌ 서버 오류" });
   }
 });
-
