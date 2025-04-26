@@ -8,8 +8,8 @@ const PORT = process.env.PORT || 3020;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));  // ✅ static 파일 공개 추가 (auth.html, roulette.html 접속 가능)
 
-// MongoDB 연결
 const client = new MongoClient(process.env.MONGO_URI);
 let spins;
 let scores;
@@ -25,10 +25,9 @@ client.connect().then(() => {
   console.error('❌ MongoDB 연결 실패:', err);
 });
 
-// 8시간 블럭 계산 함수
 function getCurrentBlockStart() {
   const now = new Date();
-  now.setUTCHours(now.getUTCHours() + 9); // 한국시간 기준
+  now.setUTCHours(now.getUTCHours() + 9);
 
   const hour = now.getHours();
   let startHour = 0;
