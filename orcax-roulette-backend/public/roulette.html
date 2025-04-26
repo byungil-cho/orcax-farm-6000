@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🌰 OrcaX 색깔판 룰렛</title>
+  <style>
+    body {
+      background-color: #0A0A1A;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #wheel-container {
+      position: relative;
+      margin: 30px auto;
+      width: 300px;
+      height: 300px;
+    }
+    #pointer {
+      width: 0;
+      height: 0;
+      border-left: 30px solid red;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+      position: absolute;
+      left: -30px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+    #wheel {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 8px solid gold;
+      background: conic-gradient(
+        yellow 0deg 72deg,
+        deepskyblue 72deg 144deg,
+        black 144deg 216deg,
+        orange 216deg 288deg,
+        red 288deg 360deg
+      );
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    #result, #total, #emailGuide, #colorGuide {
+      margin-top: 20px;
+    }
+    #spinBtn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #00cfff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #emailGuide, #colorGuide {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    #emailGuide strong {
+      color: #ffff00;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌰 OrcaX 색깔판 룰렛</h1>
+
+  <div id="wheel-container">
+    <div id="pointer"></div>
+    <div id="wheel"></div>
+  </div>
+
+  <button id="spinBtn">돌리기 (<span id="spinCount">0</span>/5)</button>
+  <div id="result">🎯 결과: 없음</div>
+  <div id="total">💰 총점: 0 ORCX</div>
+
+  <p id="emailGuide">
+    📢 누적 점수 50000 ORCX 이상이면 아래 이메일로 신청하세요!<br>
+    신청 이메일: <strong>jbl01570@hanmail.net</strong><br>
+    (메일 보낼 때 <u>지갑주소와 총 점수</u>를 함께 보내주세요!)
+  </p>
+
+  <p id="colorGuide">
+    🎯 색깔별 점수 안내<br><br>
+    <span style="color:yellow">🟡 노랑색: 200 ORCX</span><br>
+    <span style="color:deepskyblue">🟦 파란색: 300 ORCX</span><br>
+    <span style="color:black">⚫ 검정색: 0 (꽝)</span><br>
+    <span style="color:orange">🟧 주황색: 0 (꽝)</span><br>
+    <span style="color:red">🔴 빨강색: 100 ORCX</span>
+  </p>
+
+  <script>
+    const spinBtn = document.getElementById('spinBtn');
+    const resultDiv = document.getElementById('result');
+    const totalDiv = document.getElementById('total');
+    const spinCountSpan = document.getElementById('spinCount');
+    const wheel = document.getElementById('wheel');
+
+    let currentRotation = 0;
+    let spinCount = 0;
+    let totalScore = 0;
+    let sessionScore = 0;
+    const maxSpins = 5;
+
+    async function fetchTotalScore() {
+      const userWallet = localStorage.getItem("orcax_user") || "guest";
+      try {
+        const response = await fetch(`https://orcax-roulette-backend.onrender.com/api/roulette/score?user=${userWallet}`);
+        const data = await response.json();
+        return data.totalScore || 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    async function saveSessionScore() {
+      const userWallet = localStorage.getItem("orcax_user") || "guest";
+      if (sessionScore > 0) {
+        await fetch(`https://orcax-roulette-backend.onrender.com/api/roulette/addscore`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user: userWallet,
+            addedScore: sessionScore
+          })
+        });
+      }
+    }
+
+    function updateUI() {
+      spinCountSpan.innerText = spinCount;
+      totalDiv.innerHTML = `💰 총점: ${totalScore} ORCX`;
+    }
+
+    function doSpin() {
+      if (spinCount >= maxSpins) {
+        alert("더 이상 돌릴 수 없어요!");
+        return;
+      }
+
+      spinCount++;
+      updateUI();
+
+      const randomExtraRotation = Math.floor(Math.random() * 360);
+      const spinDeg = (360 * 5) + randomExtraRotation;
+      currentRotation += spinDeg;
+
+      wheel.style.transform = `rotate(-${currentRotation}deg)`;
+
+      setTimeout(() => {
+        const normalizedRotation = (currentRotation % 360 + 360) % 360;
+        const pointerDeg = (normalizedRotation + 270) % 360; // ✅ 정확한 방향 보정
+
+        let reward = 0;
+        let label = '';
+
+        if (pointerDeg >= 0 && pointerDeg < 72) {
+          reward = 200; label = '노랑색';
+        } else if (pointerDeg >= 72 && pointerDeg < 144) {
+          reward = 300; label = '파란색';
+        } else if (pointerDeg >= 144 && pointerDeg < 216) {
+          reward = 0; label = '검정색';
+        } else if (pointerDeg >= 216 && pointerDeg < 288) {
+          reward = 0; label = '주황색';
+        } else {
+          reward = 100; label = '빨강색';
+        }
+
+        resultDiv.innerHTML = `🎯 결과: ${label} (${reward > 0 ? reward + ' ORCX' : '꽝'})`;
+        totalScore += reward;
+        sessionScore += reward;
+        updateUI();
+
+        if (spinCount === maxSpins) {
+          saveSessionScore();
+        }
+      }, 4200);
+    }
+
+    spinBtn.addEventListener('click', doSpin);
+
+    (async function init() {
+      totalScore = await fetchTotalScore();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
