@@ -12,55 +12,37 @@ app.use(express.json());
 // MongoDB 연결
 const client = new MongoClient(process.env.MONGO_URI);
 let spins;
-let users;
 
 client.connect().then(() => {
   const db = client.db('orcax');
   spins = db.collection('spins');
-  users = db.collection('users');
-  console.log('✅ MongoDB 연결 성공 (orcax)');
+  console.log('✅ MongoDB 연결 성공 (orcax.spins)');
 }).catch(err => {
   console.error('❌ MongoDB 연결 실패:', err);
 });
 
-// 기본 루트
+// 8시간 블럭 계산 함수
+function getCurrentBlockStart() {
+  const now = new Date();
+  now.setUTCHours(now.getUTCHours() + 9); // 한국시간 기준으로 맞춤
+
+  const hour = now.getHours();
+  let startHour = 0;
+  if (hour < 8) startHour = 0;
+  else if (hour < 16) startHour = 8;
+  else startHour = 16;
+
+  const blockStart = new Date(now);
+  blockStart.setHours(startHour, 0, 0, 0);
+  return blockStart;
+}
+
+// 기본 확인용 루트
 app.get('/', (req, res) => {
-  res.send('🌀 OrcaX 룰렛 서버 살아있다! (포트 3020)');
+  res.send('🌀 OrcaX 룰렛 서버가 살아있다! (포트 3020)');
 });
 
-// 🐳 회원가입 API
-app.post('/api/register', async (req, res) => {
-  try {
-    const { wallet, email } = req.body;
-
-    if (!wallet && !email) {
-      return res.status(400).json({ success: false, message: "❌ 지갑주소나 이메일이 필요해요!" });
-    }
-
-    const identifier = wallet || email;
-
-    // 이미 존재하는지 확인
-    const existing = await users.findOne({ $or: [{ wallet }, { email }] });
-    if (existing) {
-      return res.json({ success: true, message: "✅ 이미 가입된 유저예요!", user: existing });
-    }
-
-    const newUser = {
-      wallet: wallet || null,
-      email: email || null,
-      createdAt: new Date()
-    };
-
-    const result = await users.insertOne(newUser);
-
-    res.json({ success: true, message: "✅ 회원가입 완료!", user: newUser });
-  } catch (err) {
-    console.error('❌ 회원가입 에러:', err);
-    res.status(500).json({ success: false, message: "❌ 서버 에러" });
-  }
-});
-
-// 점수 기록 저장
+// 룰렛 기록 저장
 app.post('/api/roulette/record', async (req, res) => {
   try {
     const { user, reward, score, timestamp } = req.body;
@@ -69,44 +51,25 @@ app.post('/api/roulette/record', async (req, res) => {
       return res.status(400).json({ success: false, message: "❌ 필수 값 누락" });
     }
 
-    await spins.insertOne({ user, reward, score, timestamp });
+    // 8시간 블럭 기준 체크
+    const blockStart = getCurrentBlockStart();
+
+    const spinCount = await spins.countDocuments({
+      user,
+      timestamp: { $gte: blockStart }
+    });
+
+    if (spinCount >= 5) {
+      return res.status(429).json({ success: false, message: "⛔ 이번 시간대에 가능한 룰렛 5회 모두 사용했습니다." });
+    }
+
+    // 기록 저장
+    await spins.insertOne({ user, reward, score, timestamp: new Date(timestamp) });
+
     res.json({ success: true, message: "✅ 룰렛 결과 저장 완료" });
   } catch (err) {
-    console.error('❌ DB 저장 중 에러:', err);
+    console.error('❌ 서버 에러:', err);
     res.status(500).json({ success: false, message: "❌ 서버 에러" });
-  }
-});
-
-// 기록 조회
-app.get('/api/roulette/history', async (req, res) => {
-  try {
-    const userFilter = req.query.user;
-    const query = userFilter ? { user: userFilter } : {};
-    const records = await spins.find(query).sort({ timestamp: -1 }).limit(10).toArray();
-    res.json(records);
-  } catch (err) {
-    console.error('❌ 기록 조회 에러:', err);
-    res.status(500).json({ success: false, message: "❌ 조회 실패" });
-  }
-});
-
-// 고래 랭킹
-app.get('/api/roulette/rank', async (req, res) => {
-  try {
-    const rankings = await spins.aggregate([
-      { $group: {
-          _id: '$user',
-          totalScore: { $sum: '$score' },
-          plays: { $sum: 1 }
-      }},
-      { $sort: { totalScore: -1 } },
-      { $limit: 10 }
-    ]).toArray();
-
-    res.json(rankings);
-  } catch (err) {
-    console.error('❌ 랭킹 조회 에러:', err);
-    res.status(500).json({ success: false, message: "❌ 랭킹 조회 실패" });
   }
 });
 
