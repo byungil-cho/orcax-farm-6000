@@ -2,150 +2,111 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>OrcaX - 회원가입 / 로그인 / 비번찾기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카카오 로그인</title>
+  <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <style>
-    body { background-color: #0A0A1A; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
-    input { width: 300px; padding: 8px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
-    button { padding: 10px 20px; margin: 10px; background-color: #00cfff; border: none; border-radius: 8px; cursor: pointer; }
-    .tab { display: none; }
-    .tab.active { display: block; }
-    #tabs button { margin: 5px; }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    #kakao-login-btn {
+      padding: 15px 30px;
+      font-size: 18px;
+      background-color: #FEE500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #kakao-login-btn:hover {
+      background-color: #ffd700;
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 20px;
+      }
+      #kakao-login-btn {
+        padding: 12px 24px;
+        font-size: 16px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>🐳 OrcaX 팬텀 지갑 회원 인증</h1>
 
-  <div id="tabs">
-    <button onclick="showTab('registerTab')">회원가입</button>
-    <button onclick="showTab('loginTab')">로그인</button>
-    <button onclick="showTab('findPwTab')">비번찾기</button>
-  </div>
+<h1>카카오로 로그인</h1>
 
-  <div id="registerTab" class="tab active">
-    <h2>회원가입</h2>
-    <button onclick="connectWallet()">🛡️ 팬텀 지갑 연결</button><br/>
-    <input type="text" id="reg_wallet" placeholder="팬텀 지갑 주소" readonly><br/>
-    <input type="email" id="reg_email" placeholder="이메일 입력"><br/>
-    <input type="password" id="reg_password" placeholder="비밀번호(4자리)" maxlength="4"><br/>
-    <button onclick="register()">가입하기</button>
-  </div>
+<button id="kakao-login-btn">카카오 로그인</button>
 
-  <div id="loginTab" class="tab">
-    <h2>로그인</h2>
-    <input type="email" id="login_email" placeholder="이메일 입력"><br/>
-    <input type="password" id="login_password" placeholder="비밀번호(4자리)" maxlength="4"><br/>
-    <button onclick="login()">로그인하기</button>
-  </div>
+<script>
+// 1. 카카오 SDK 초기화
+Kakao.init('a19849cd9ffb167d530478c06b5fcfd0'); // 실장님이 복사한 JavaScript 키!
+console.log(Kakao.isInitialized()); // true 나오면 초기화 성공!
 
-  <div id="findPwTab" class="tab">
-    <h2>비밀번호 찾기</h2>
-    <input type="text" id="find_wallet" placeholder="팬텀 지갑 주소 입력"><br/>
-    <button onclick="findPassword()">비밀번호 찾기</button>
-  </div>
+// 2. 로그인 버튼 클릭 이벤트
+document.getElementById('kakao-login-btn').addEventListener('click', function() {
+  Kakao.Auth.login({
+    scope: 'profile_nickname, account_email', // 닉네임, 이메일 가져오기 요청
+    success: function(authObj) {
+      console.log('카카오 로그인 성공', authObj);
 
-  <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-    }
+      // 3. 사용자 정보 요청
+      Kakao.API.request({
+        url: '/v2/user/me',
+        success: function(res) {
+          console.log('사용자 정보', res);
 
-    async function connectWallet() {
-      if (window.solana && window.solana.isPhantom) {
-        try {
-          const resp = await window.solana.connect();
-          document.getElementById('reg_wallet').value = resp.publicKey.toString();
-        } catch (err) {
-          alert('지갑 연결 실패');
+          const kakaoAccount = res.kakao_account;
+          const email = kakaoAccount.email;
+          const nickname = kakaoAccount.profile.nickname;
+
+          // 4. 서버로 이메일, 닉네임 전송 (회원가입/로그인 처리)
+          fetch('/api/login-kakao', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, nickname })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('서버 응답:', data);
+            if (data.success) {
+              alert('✅ 로그인 성공!');
+              // TODO: 로그인 성공 후 이동할 페이지로 이동 가능
+            } else {
+              alert('❌ 로그인 실패: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('서버 통신 오류:', error);
+            alert('❌ 서버 오류가 발생했습니다.');
+          });
+
+        },
+        fail: function(error) {
+          console.error('사용자 정보 요청 실패', error);
+          alert('❌ 사용자 정보 요청 실패');
         }
-      } else {
-        alert('팬텀 지갑이 설치되어 있지 않습니다!');
-      }
-    }
-
-    function register() {
-      const wallet = document.getElementById('reg_wallet').value.trim();
-      const email = document.getElementById('reg_email').value.trim();
-      const password = document.getElementById('reg_password').value.trim();
-
-      if (!wallet || !email || password.length !== 4) {
-        alert('모든 항목을 정확히 입력하세요!');
-        return;
-      }
-
-      fetch('https://orcax-roulette-backend.onrender.com/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet, email, password })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          localStorage.setItem('orcax_user', wallet);
-          localStorage.setItem('orcax_email', email);
-          alert('✅ 가입 완료! 룰렛으로 이동합니다.');
-          window.location.href = '/roulette.html';
-        } else {
-          alert(data.message || '가입 실패');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('서버 오류');
       });
+    },
+    fail: function(err) {
+      console.error('카카오 로그인 실패', err);
+      alert('❌ 카카오 로그인 실패');
     }
+  });
+});
+</script>
 
-    function login() {
-      const email = document.getElementById('login_email').value.trim();
-      const password = document.getElementById('login_password').value.trim();
-
-      if (!email || password.length !== 4) {
-        alert('모든 항목을 입력하세요!');
-        return;
-      }
-
-      fetch('https://orcax-roulette-backend.onrender.com/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          localStorage.setItem('orcax_user', data.wallet);
-          localStorage.setItem('orcax_email', email);
-          alert('✅ 로그인 성공! 룰렛으로 이동합니다.');
-          window.location.href = '/roulette.html';
-        } else {
-          alert(data.message || '로그인 실패');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('서버 오류');
-      });
-    }
-
-    function findPassword() {
-      const wallet = document.getElementById('find_wallet').value.trim();
-      if (!wallet) {
-        alert('팬텀 지갑 주소를 입력하세요!');
-        return;
-      }
-
-      fetch(`https://orcax-roulette-backend.onrender.com/api/find-password?wallet=${wallet}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert(`✅ 등록된 비밀번호는: ${data.password}`);
-        } else {
-          alert(data.message || '지갑 주소가 없습니다.');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('서버 오류');
-      });
-    }
-  </script>
 </body>
 </html>
