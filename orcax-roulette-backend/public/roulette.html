@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>🌰 OrcaX 색깔판 룰렛</title>
+  <title>🌰 OrcaX 룰렛</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       background-color: #0A0A1A;
@@ -46,7 +47,7 @@
       left: 0;
       transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
     }
-    #result, #total, #emailGuide, #colorGuide {
+    #result, #total {
       margin-top: 20px;
     }
     #spinBtn {
@@ -58,17 +59,20 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    #emailGuide, #colorGuide {
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-    #emailGuide strong {
-      color: #ffff00;
+    #withdrawBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #FFD700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>🌰 OrcaX 색깔판 룰렛</h1>
+
+  <h1>🌰 OrcaX 룰렛</h1>
 
   <div id="wheel-container">
     <div id="pointer"></div>
@@ -78,21 +82,6 @@
   <button id="spinBtn">돌리기 (<span id="spinCount">0</span>/5)</button>
   <div id="result">🎯 결과: 없음</div>
   <div id="total">💰 총점: 0 ORCX</div>
-
-  <p id="emailGuide">
-    📢 누적 점수 50000 ORCX 이상이면 아래 이메일로 신청하세요!<br>
-    신청 이메일: <strong>jbl01570@hanmail.net</strong><br>
-    (메일 보낼 때 <u>지갑주소와 총 점수</u>를 함께 보내주세요!)
-  </p>
-
-  <p id="colorGuide">
-    🎯 색깔별 점수 안내<br><br>
-    <span style="color:yellow">🟡 노랑색: 200 ORCX</span><br>
-    <span style="color:deepskyblue">🟦 파란색: 300 ORCX</span><br>
-    <span style="color:black">⚫ 검정색: 0 (꽝)</span><br>
-    <span style="color:orange">🟧 주황색: 0 (꽝)</span><br>
-    <span style="color:red">🔴 빨강색: 100 ORCX</span>
-  </p>
 
   <script>
     const spinBtn = document.getElementById('spinBtn');
@@ -135,11 +124,22 @@
     function updateUI() {
       spinCountSpan.innerText = spinCount;
       totalDiv.innerHTML = `💰 총점: ${totalScore} ORCX`;
+
+      checkAndShowWithdrawButton();
     }
 
     function doSpin() {
+      const orcaxUser = localStorage.getItem("orcax_user");
+
+      // ✅ 2번째 클릭부터 로그인 체크
+      if (spinCount >= 1 && (!orcaxUser || orcaxUser === 'guest')) {
+        alert('🎯 두번째 스핀부터는 로그인 또는 회원가입이 필요합니다!');
+        window.location.href = "/auth.html";
+        return;
+      }
+
       if (spinCount >= maxSpins) {
-        alert("더 이상 돌릴 수 없어요!");
+        alert("✅ 무료 스핀은 끝났습니다! 추가 스핀은 100토큰이 필요합니다.");
         return;
       }
 
@@ -154,7 +154,7 @@
 
       setTimeout(() => {
         const normalizedRotation = (currentRotation % 360 + 360) % 360;
-        const pointerDeg = (normalizedRotation + 270) % 360; // ✅ 정확한 방향 보정
+        const pointerDeg = (normalizedRotation + 270) % 360;
 
         let reward = 0;
         let label = '';
@@ -188,6 +188,41 @@
       totalScore = await fetchTotalScore();
       updateUI();
     })();
+
+    function checkAndShowWithdrawButton() {
+      if (totalScore >= 50000 && !document.getElementById('withdrawBtn')) {
+        const btn = document.createElement('button');
+        btn.textContent = "💰 출금 신청하기";
+        btn.id = "withdrawBtn";
+        btn.onclick = requestWithdrawal;
+        document.body.appendChild(btn);
+      }
+    }
+
+    async function requestWithdrawal() {
+      const userWallet = localStorage.getItem("orcax_user") || "guest";
+      const email = prompt("출금 신청 이메일을 입력하세요");
+
+      if (!email) {
+        alert('❗ 이메일 입력이 필요합니다.');
+        return;
+      }
+
+      const res = await fetch(`https://orcax-roulette-backend.onrender.com/api/roulette/withdraw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: userWallet, email })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('✅ 출금 신청 완료되었습니다!');
+        document.getElementById('withdrawBtn').remove();
+      } else {
+        alert('❌ 출금 신청 실패: ' + data.message);
+      }
+    }
   </script>
+
 </body>
 </html>
