@@ -2,111 +2,47 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <title>OrcaX 로그인</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>카카오 로그인</title>
-  <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <style>
     body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
+      background-color: #0A0A1A;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 20px;
     }
     h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
+      margin-top: 40px;
     }
     #kakao-login-btn {
-      padding: 15px 30px;
-      font-size: 18px;
-      background-color: #FEE500;
+      margin-top: 30px;
+      background: #FEE500;
+      padding: 10px 20px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    #kakao-login-btn:hover {
-      background-color: #ffd700;
-    }
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 20px;
-      }
-      #kakao-login-btn {
-        padding: 12px 24px;
-        font-size: 16px;
-      }
+      font-size: 1.2rem;
+      color: #381E1F;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-<h1>카카오로 로그인</h1>
+  <h1>카카오로 로그인</h1>
 
-<button id="kakao-login-btn">카카오 로그인</button>
+  <button id="kakao-login-btn">카카오 로그인</button>
 
-<script>
-// 1. 카카오 SDK 초기화
-Kakao.init('a19849cd9ffb167d530478c06b5fcfd0'); // 실장님이 복사한 JavaScript 키!
-console.log(Kakao.isInitialized()); // true 나오면 초기화 성공!
+  <script>
+    const kakaoClientId = 'a19849cd9ffb167d530478c06b5fcfd0'; // ✅ JavaScript 키 입력
+    const redirectUri = 'https://orcax-roulette-backend.onrender.com/auth/kakao/callback'; // ✅ 콜백 URI 입력
 
-// 2. 로그인 버튼 클릭 이벤트
-document.getElementById('kakao-login-btn').addEventListener('click', function() {
-  Kakao.Auth.login({
-    scope: 'profile_nickname, account_email', // 닉네임, 이메일 가져오기 요청
-    success: function(authObj) {
-      console.log('카카오 로그인 성공', authObj);
-
-      // 3. 사용자 정보 요청
-      Kakao.API.request({
-        url: '/v2/user/me',
-        success: function(res) {
-          console.log('사용자 정보', res);
-
-          const kakaoAccount = res.kakao_account;
-          const email = kakaoAccount.email;
-          const nickname = kakaoAccount.profile.nickname;
-
-          // 4. 서버로 이메일, 닉네임 전송 (회원가입/로그인 처리)
-          fetch('/api/login-kakao', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, nickname })
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log('서버 응답:', data);
-            if (data.success) {
-              alert('✅ 로그인 성공!');
-              // TODO: 로그인 성공 후 이동할 페이지로 이동 가능
-            } else {
-              alert('❌ 로그인 실패: ' + data.message);
-            }
-          })
-          .catch(error => {
-            console.error('서버 통신 오류:', error);
-            alert('❌ 서버 오류가 발생했습니다.');
-          });
-
-        },
-        fail: function(error) {
-          console.error('사용자 정보 요청 실패', error);
-          alert('❌ 사용자 정보 요청 실패');
-        }
-      });
-    },
-    fail: function(err) {
-      console.error('카카오 로그인 실패', err);
-      alert('❌ 카카오 로그인 실패');
-    }
-  });
-});
-</script>
+    document.getElementById('kakao-login-btn').addEventListener('click', () => {
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${kakaoClientId}&redirect_uri=${redirectUri}`;
+      window.location.href = kakaoAuthUrl;
+    });
+  </script>
 
 </body>
 </html>
