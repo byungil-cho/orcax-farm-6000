@@ -1,54 +1,60 @@
+require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 const KakaoStrategy = require('passport-kakao').Strategy;
-require('dotenv').config();
-
 const app = express();
+const PORT = process.env.PORT || 3020;
 
+// 세션 설정
 app.use(session({
-  secret: 'keyboard cat',
+  secret: process.env.SESSION_SECRET || 'default_secret_key',
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: true,
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.serializeUser(function(user, done) {
+// Passport 설정
+passport.serializeUser((user, done) => {
   done(null, user);
 });
 
-passport.deserializeUser(function(obj, done) {
+passport.deserializeUser((obj, done) => {
   done(null, obj);
 });
 
 passport.use(new KakaoStrategy({
-    clientID: process.env.KAKAO_REST_API_KEY,
-    callbackURL: "https://orcax-roulette-backend.onrender.com/auth/kakao/callback"
-  },
-  function(accessToken, refreshToken, profile, done) {
-    return done(null, profile);
-  }
-));
+  clientID: process.env.KAKAO_CLIENT_ID,
+  callbackURL: `${process.env.KAKAO_REDIRECT_URI}/auth/kakao/callback`
+}, (accessToken, refreshToken, profile, done) => {
+  return done(null, profile);
+}));
 
-app.get('/', (req, res) => {
-  res.send('<a href="/auth/kakao">카카오로 로그인</a>');
-});
+// 카카오 로그인 요청
+app.get('/auth/kakao', passport.authenticate('kakao'));
 
-app.get('/auth/kakao',
-  passport.authenticate('kakao')
-);
-
+// 카카오 로그인 콜백
 app.get('/auth/kakao/callback',
   passport.authenticate('kakao', { failureRedirect: '/' }),
-  function(req, res) {
-    // 로그인 성공시 룰렛페이지로 이동
-    res.redirect('https://orca-roulette-front.vercel.app/roulette');
+  (req, res) => {
+    res.redirect('/roulette.html?loginSuccess=true'); 
+    // 로그인 성공 후 룰렛 2회차 자동 실행
   }
 );
 
-const PORT = process.env.PORT || 3020;
+// 로그아웃
+app.get('/logout', (req, res) => {
+  req.logout(() => {
+    res.redirect('/');
+  });
+});
+
+// public 폴더에서 파일 제공
+app.use(express.static('public'));
+
+// 서버 시작
 app.listen(PORT, () => {
-  console.log(`서버 실행 중 (포트 ${PORT})`);
+  console.log(`✅ 서버 실행 중: 포트 ${PORT}`);
 });

@@ -35,12 +35,9 @@
   <button id="kakao-login-btn">카카오 로그인</button>
 
   <script>
-    const kakaoClientId = 'a19849cd9ffb167d530478c06b5fcfd0'; // ✅ JavaScript 키 입력
-    const redirectUri = 'https://orcax-roulette-backend.onrender.com/auth/kakao/callback'; // ✅ 콜백 URI 입력
-
     document.getElementById('kakao-login-btn').addEventListener('click', () => {
-      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${kakaoClientId}&redirect_uri=${redirectUri}`;
-      window.location.href = kakaoAuthUrl;
+      window.location.href = '/auth/kakao';
+      // 서버에서 직접 카카오 인증 시작
     });
   </script>
 
