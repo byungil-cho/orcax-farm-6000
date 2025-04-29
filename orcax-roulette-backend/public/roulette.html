@@ -7,7 +7,7 @@
   <style>
     body {
       background-color: #0A0A1A;
-      color: #fff;
+      color: white;
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
       padding: 20px;
@@ -124,17 +124,15 @@
     function updateUI() {
       spinCountSpan.innerText = spinCount;
       totalDiv.innerHTML = `💰 총점: ${totalScore} ORCX`;
-
       checkAndShowWithdrawButton();
     }
 
     function doSpin() {
       const orcaxUser = localStorage.getItem("orcax_user");
 
-      // ✅ 2번째 클릭부터 로그인 체크
       if (spinCount >= 1 && (!orcaxUser || orcaxUser === 'guest')) {
         alert('🎯 두번째 스핀부터는 로그인 또는 회원가입이 필요합니다!');
-        window.location.href = "/auth.html";
+        window.location.href = location.origin + "/auth.html"; // ✅ 절대경로로 수정
         return;
       }
 
