@@ -86,9 +86,13 @@
   <button onclick="spinRoulette()">스핀!</button>
   <audio id="spin-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a9dbb37a0.mp3?filename=spin-wheel-110411.mp3"></audio>
   <div>
-    <a href="/withdraw.html" target="_blank" class="withdraw-link">💸 출금 요청 페이지로 이동</a>
+    <a href="https://byungil-cho.github.io/OrcaX/withdraw.html" target="_blank" class="withdraw-link">💸 출금 요청 페이지로 이동</a>
   </div>
   <script>
+    const API_BASE = location.hostname === 'localhost'
+      ? 'http://localhost:3020'
+      : 'https://orcax-roulette-backend.onrender.com';
+
     const spinCountDisplay = document.getElementById('spin-count');
     const result = document.getElementById('result');
     const wheel = document.getElementById("wheel");
@@ -96,9 +100,11 @@
     const loading = document.getElementById("loading");
     const wallet = localStorage.getItem('orcax_user') || 'guest';
 
+    let spinAngle = 0;
+
     async function updateUserInfo() {
       try {
-        const res = await fetch('/api/get-score', {
+        const res = await fetch(`${API_BASE}/api/get-score`, {
           credentials: 'include'
         });
         const data = await res.json();
@@ -115,7 +121,7 @@
 
     async function spinRoulette() {
       try {
-        const res = await fetch('/api/spin', {
+        const res = await fetch(`${API_BASE}/api/spin`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
@@ -132,12 +138,13 @@
         loading.style.display = "block";
         result.textContent = "";
 
-        const angle = Math.floor(Math.random() * 360 + 1080);
-        wheel.style.transform = `rotate(${angle}deg)`;
+        const randomRotation = Math.floor(Math.random() * 360) + 1080;
+        spinAngle += randomRotation;
+        wheel.style.transform = `rotate(${spinAngle}deg)`;
 
         setTimeout(async () => {
           loading.style.display = "none";
-          const prizeIndex = Math.floor((angle % 360) / 72);
+          const prizeIndex = Math.floor(((spinAngle % 360) + 72 / 2) / 72) % 5;
           const prizes = ['100 ORCAX', '200 ORCAX', '300 ORCAX', '꽝', '10 ORCAX'];
           const prizeValues = [100, 200, 300, 0, 10];
           const reward = prizeValues[prizeIndex];
@@ -145,7 +152,7 @@
           result.textContent = reward > 0 ? `🎉 축하합니다! ${prizes[prizeIndex]} 당첨!` : `😢 아쉽지만 ${prizes[prizeIndex]}`;
 
           if (reward > 0) {
-            await fetch('/api/save-score', {
+            await fetch(`${API_BASE}/api/save-score`, {
               method: 'POST',
               credentials: 'include',
               headers: { 'Content-Type': 'application/json' },
@@ -162,8 +169,7 @@
       }
     }
 
-    // 사용자 인증 정보 가져오기
-    fetch('/api/me', { credentials: 'include' })
+    fetch(`${API_BASE}/api/me`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data?.user?.wallet) {
