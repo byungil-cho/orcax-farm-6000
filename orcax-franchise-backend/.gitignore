@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+.env
+
+# Logs
+logs/
+*.log
+
+# Uploaded files
+uploads/
+
+# Optional system files
+.DS_Store
+Thumbs.db
