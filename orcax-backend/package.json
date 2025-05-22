@@ -1,11 +1,13 @@
 {
-  "type": "module",
+  "name": "orcax-backend",
+  "version": "1.0.0",
+  "description": "OrcaX 쿠폰 주문 처리 백엔드",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "mongoose": "^8.14.1"
+    "cors": "^2.8.5"
   }
 }
