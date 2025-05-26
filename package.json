@@ -1,0 +1,15 @@
+{
+  "name": "orcax-farm-backend",
+  "version": "1.0.0",
+  "description": "감자/보리 백엔드 API 서버",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongoose": "^7.0.4"
+  }
+}
