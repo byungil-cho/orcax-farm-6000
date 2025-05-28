@@ -5,7 +5,11 @@ const mongoose = require("mongoose");
 const app = express();
 const PORT = process.env.PORT || 6000;
 
-app.use(cors());
+app.use(cors({
+  origin: ["https://byungil-cho.github.io"], // 여기에 정확히 너의 프론트 도메인 넣어야 함
+  credentials: false
+}));
+
 app.use(express.json());
 
 mongoose.connect("mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER>.mongodb.net/farmDB?retryWrites=true&w=majority", {
@@ -26,7 +30,6 @@ const farmSchema = new mongoose.Schema({
 
 const Farm = mongoose.model("Farm", farmSchema);
 
-// 초기화 및 데이터 가져오기
 async function getFarm() {
   let farm = await Farm.findOne();
   if (!farm) {
