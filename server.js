@@ -80,10 +80,17 @@ app.post("/api/create-product", async (req, res) => {
 });
 
 // 🧃 감자 보관함 조회
-app.get("/api/gamja", (req, res) => {
+app.get("/api/gamja", async (req, res) => {
+  const dbItems = await Potato.aggregate([
+    { $match: { action: "create" } },
+    { $group: { _id: "$type", count: { $sum: "$count" } } },
+    { $project: { name: "$_id", count: 1, _id: 0 } }
+  ]);
+
   res.json({
     ...inventory,
-    totalCollected: inventory.potatoes + inventory.items.reduce((sum, item) => sum + item.count, 0)
+    items: dbItems,
+    totalCollected: inventory.potatoes + dbItems.reduce((sum, item) => sum + item.count, 0)
   });
 });
 
