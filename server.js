@@ -1,14 +1,15 @@
-// server.js (6000 // server.js (6000 \uud55c역 포트, 경쟁력 가지고 배포도 되고)
+
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const app = express();
 const PORT = process.env.PORT || 6000;
 
-app.use(cors({ origin: ["https://byungil-cho.github.io"], credentials: false }));
+app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER>.mongodb.net/farmDB?retryWrites=true&w=majority", {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -22,7 +23,6 @@ const farmSchema = new mongoose.Schema({
   water: Number,
   history: Array,
   announcements: Array,
-  lastHarvestTime: Date,
 });
 
 const Farm = mongoose.model("Farm", farmSchema);
@@ -33,16 +33,12 @@ async function getFarm() {
     farm = new Farm({
       potatoes: 10,
       harvested: 3,
-      items: [
-        { name: "감자칩", count: 2 },
-        { name: "감자전", count: 1 }
-      ],
+      items: [{ name: "감자칩", count: 2 }, { name: "감자전", count: 1 }],
       tokens: 5,
       compost: 10,
       water: 10,
       history: [],
-      announcements: [],
-      lastHarvestTime: new Date(0)
+      announcements: []
     });
     await farm.save();
   }
@@ -65,11 +61,16 @@ app.get("/api/gamja", async (req, res) => {
 app.post("/api/create-product", async (req, res) => {
   const { type, farm: farmName } = req.body;
   const farm = await getFarm();
-  if (farm.potatoes <= 0) return res.status(400).send({ message: "감자가 없습니다." });
+  if (farm.potatoes <= 0) {
+    return res.status(400).send({ message: "감자가 없습니다." });
+  }
   farm.potatoes -= 1;
   const existing = farm.items.find(i => i.name === type);
-  if (existing) existing.count += 1;
-  else farm.items.push({ name: type, count: 1 });
+  if (existing) {
+    existing.count += 1;
+  } else {
+    farm.items.push({ name: type, count: 1 });
+  }
   farm.history.push({ type, action: "가공", time: new Date(), farm: farmName });
   const message = `${farmName} 농장에서 ${type} 신상품이 출시되었습니다.`;
   farm.announcements.unshift({ message, time: new Date() });
@@ -78,18 +79,65 @@ app.post("/api/create-product", async (req, res) => {
   res.send({ name: type, message: `${type} 가공 완료`, farm: farmName });
 });
 
-app.post("/api/free-harvest", async (req, res) => {
-  const now = new Date();
+app.get("/api/announcements", async (req, res) => {
   const farm = await getFarm();
-  const last = farm.lastHarvestTime || new Date(0);
-  const hoursPassed = (now - last) / (1000 * 60 * 60);
-  if (hoursPassed < 2) return res.status(400).send({ message: "무료 농사 가능 시간이 아직 안 됐습니다." });
+  res.send({ announcements: farm.announcements });
+});
 
-  farm.potatoes += 2;
-  farm.harvested += 2;
-  farm.lastHarvestTime = now;
+app.post("/api/buy-seed", async (req, res) => {
+  const { count } = req.body;
+  const farm = await getFarm();
+  if (farm.tokens < count) {
+    return res.status(400).send({ message: "토큰 부족" });
+  }
+  farm.tokens -= count;
+  farm.potatoes += count;
   await farm.save();
-  res.send({ message: "무료 감자 수확 2개 완료!" });
+  res.send({ message: `${count}개 씨감자 구매 완료` });
+});
+
+app.post("/api/exchange", async (req, res) => {
+  const { itemType } = req.body;
+  const farm = await getFarm();
+  const target = farm.items.find(i => i.name === itemType);
+  if (!target || target.count < 1) {
+    return res.status(400).send({ message: "제품 부족" });
+  }
+  target.count -= 1;
+  if (itemType.includes("물")) farm.water += 1;
+  else farm.compost += 1;
+  await farm.save();
+  res.send({ message: `${itemType}로 교환 완료` });
+});
+
+app.get("/api/price", async (req, res) => {
+  const farm = await getFarm();
+  const total = farm.items.reduce((sum, i) => sum + i.count, 0) || 1;
+  const prices = farm.items.map(i => {
+    const avg = total / farm.items.length;
+    const ratio = avg / i.count;
+    const price = Number((ratio).toFixed(2));
+    return { name: i.name, price };
+  });
+  res.send({ prices });
+});
+
+app.post("/api/sell", async (req, res) => {
+  const { name, count } = req.body;
+  const farm = await getFarm();
+  const item = farm.items.find(i => i.name === name);
+  if (!item || item.count < count) {
+    return res.status(400).send({ message: "수량 부족" });
+  }
+  item.count -= count;
+  const total = farm.items.reduce((sum, i) => sum + i.count, 0) || 1;
+  const avg = total / farm.items.length;
+  const ratio = avg / (item.count || 1);
+  const price = Number((ratio).toFixed(2));
+  const earned = Math.round(count * price);
+  farm.tokens += earned;
+  await farm.save();
+  res.send({ message: `${name} ${count}개 판매 완료`, earned, tokens: farm.tokens });
 });
 
 app.listen(PORT, () => {
