@@ -1,8 +1,9 @@
-// models/Farm.js
+
 const mongoose = require('mongoose');
-const FarmSchema = new mongoose.Schema({
-  nickname: String,
-  farmName: String,
-  createdAt: { type: Date, default: Date.now }
+
+const farmSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  potatoes: { type: Number, default: 0 }
 });
-module.exports = mongoose.model('Farm', FarmSchema);
+
+module.exports = mongoose.model('Farm', farmSchema);
