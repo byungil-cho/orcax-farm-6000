@@ -1,11 +1,10 @@
-
-// harvest 라우터 추가 포함된 백엔드 라우터 파일
+// api.js (수정 완료: 감자 서버 API 라우터 통합)
 const express = require("express");
 const router = express.Router();
 
-const users = {};
-const inventory = {};
-const exchangeLogs = {};
+let users = {};
+let inventory = {};
+let exchangeLogs = {};
 const farmingHistory = {};
 
 const FARMING_INTERVAL_MS = 2 * 60 * 60 * 1000;
@@ -43,7 +42,7 @@ function checkFarmingRecharge(nickname) {
   }
 }
 
-router.get("/", (req, res) => {
+router.get("/gamja", (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
 
@@ -75,6 +74,26 @@ router.post("/harvest", (req, res) => {
   users[nickname].harvestCount += amount;
 
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: users[nickname].potatoCount });
+});
+
+router.post("/create-product", (req, res) => {
+  const { type, farm } = req.body;
+  if (!type || !farm || !users[farm]) return res.status(400).json({ error: "잘못된 요청" });
+
+  if (users[farm].potatoCount < 1) {
+    return res.status(400).json({ error: "감자 없음" });
+  }
+
+  users[farm].potatoCount -= 1;
+  const items = inventory[farm];
+  const found = items.find(i => i.name === type);
+  if (found) {
+    found.count += 1;
+  } else {
+    items.push({ name: type, count: 1 });
+  }
+
+  res.json({ message: `${type} 생성됨` });
 });
 
 module.exports = router;

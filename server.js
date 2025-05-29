@@ -1,3 +1,4 @@
+// server.js (전기선 연결 & 구조 정비 완료)
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -5,6 +6,10 @@ const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 6000;
+
+// 🔌 핵심: api.js 라우터 연결
+const apiRouter = require("./api");
+app.use("/api", apiRouter);
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -44,52 +49,12 @@ function initializeUser(nickname) {
   }
 }
 
+// ✅ 서버 상태 확인용 ping 엔드포인트 (기존 유지)
 app.get("/api/ping", (req, res) => {
   res.json({ message: "pong" });
 });
 
-app.get("/api/gamja", (req, res) => {
-  const nickname = req.query.nickname;
-  if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
-  initializeUser(nickname);
-
-  res.json({
-    ...users[nickname],
-    items: inventory[nickname],
-    exchangeLogs: exchangeLogs[nickname]
-  });
-});
-
-app.post("/api/harvest", (req, res) => {
-  const { nickname } = req.body;
-  if (!nickname || !users[nickname]) return res.status(400).json({ error: "유저 없음" });
-
-  users[nickname].potatoCount += 10;
-  users[nickname].harvestCount += 1;
-  saveData();
-
-  res.json({ message: "감자 10개 수확!", potatoCount: users[nickname].potatoCount });
-});
-
-app.post("/api/create-product", (req, res) => {
-  const { type, farm } = req.body;
-  if (!type || !farm || !users[farm]) return res.status(400).json({ error: "잘못된 요청" });
-
-  if (users[farm].potatoCount < 1) {
-    return res.status(400).json({ error: "감자 없음" });
-  }
-
-  users[farm].potatoCount -= 1;
-  const items = inventory[farm];
-  const found = items.find(i => i.name === type);
-  if (found) {
-    found.count += 1;
-  } else {
-    items.push({ name: type, count: 1 });
-  }
-  saveData();
-  res.json({ message: `${type} 생성됨` });
-});
+// ✅ api.js로 모든 핵심 API 기능 위임 완료
 
 app.listen(PORT, () => {
   loadData();
