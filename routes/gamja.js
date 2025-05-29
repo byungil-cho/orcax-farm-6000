@@ -17,7 +17,9 @@ function initializeUser(nickname) {
       farmingCount: 2,
       water: 10,
       fertilizer: 10,
-      lastRecharge: Date.now()
+      lastRecharge: Date.now(),
+      potatoCount: 0,
+      harvestCount: 0
     };
     inventory[nickname] = [];
     exchangeLogs[nickname] = [];
@@ -59,7 +61,7 @@ router.get("/", (req, res) => {
     ...userData,
     items: userItems,
     exchangeLogs: userLogs,
-    nextRecharge, // 밀리초 단위
+    nextRecharge,
     newUser: isNew
   });
 });
