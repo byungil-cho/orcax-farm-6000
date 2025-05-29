@@ -1,12 +1,35 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>감자 농장</title>
 </head>
 <body>
-  <h1>감자 농장에 오신 것을 환영합니다!</h1>
-  <p>서버가 감자를 안전하게 보관하고 있습니다.</p>
+  <h1>🐳 감자 농장에 오신 걸 환영합니다!</h1>
+  <p>서버 정상 작동 중입니다.</p>
+  <script>
+    const nickname = localStorage.getItem("nickname") || "범고래X";
+    localStorage.setItem("nickname", nickname);
+
+    fetch("api/ping")
+      .then(res => res.json())
+      .then(data => {
+        const div = document.createElement("div");
+        div.textContent = "✅ 서버 응답: " + data.message;
+        document.body.appendChild(div);
+        return fetch("api/gamja?nickname=" + nickname);
+      })
+      .then(res => res.json())
+      .then(data => {
+        const info = document.createElement("pre");
+        info.textContent = JSON.stringify(data, null, 2);
+        document.body.appendChild(info);
+      })
+      .catch(err => {
+        const errBox = document.createElement("div");
+        errBox.textContent = "❌ 서버 문제: " + err;
+        document.body.appendChild(errBox);
+      });
+  </script>
 </body>
 </html>
