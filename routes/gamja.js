@@ -1,15 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-const users = {}; // nickname 기반 유저 상태 저장
-const inventory = {}; // nickname 기반 보관함 데이터 저장
-const exchangeLogs = {}; // 교환 기록 저장
-const farmingHistory = {}; // 마지막 농사 시간 저장
+const users = {};
+const inventory = {};
+const exchangeLogs = {};
+const farmingHistory = {};
 
-const FARMING_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2시간
-const MAX_FARMING_COUNT = 2; // 농사 티켓 최대치
+const FARMING_INTERVAL_MS = 2 * 60 * 60 * 1000;
+const MAX_FARMING_COUNT = 2;
 
-// 신규 유저 기본 지급
 function initializeUser(nickname) {
   if (!users[nickname]) {
     users[nickname] = {
@@ -42,7 +41,6 @@ function checkFarmingRecharge(nickname) {
   }
 }
 
-// GET /api/gamja - 유저 상태 확인 및 초기화
 router.get("/", (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
@@ -66,7 +64,29 @@ router.get("/", (req, res) => {
   });
 });
 
-// POST /api/buy-seed - 씨감자 교환 (ORCX 소모)
+router.post("/create-product", (req, res) => {
+  const { type, farm } = req.body;
+  const nickname = farm;
+  if (!type || !nickname || !users[nickname]) {
+    return res.status(400).json({ error: "정보 누락 또는 유저 없음" });
+  }
+
+  if (users[nickname].potatoCount <= 0) {
+    return res.status(400).json({ error: "감자 부족" });
+  }
+
+  users[nickname].potatoCount -= 1;
+  const items = inventory[nickname] || [];
+  const found = items.find(i => i.name === type);
+  if (found) {
+    found.count += 1;
+  } else {
+    items.push({ name: type, count: 1 });
+  }
+
+  res.json({ name: type, message: "제품 생성 완료" });
+});
+
 router.post("/buy-seed", (req, res) => {
   const { nickname, count } = req.body;
   if (!nickname || !users[nickname]) return res.status(400).json({ error: "유저 정보 없음" });
@@ -89,7 +109,6 @@ router.post("/buy-seed", (req, res) => {
   res.json({ message: `씨감자 ${amount}개 교환 완료` });
 });
 
-// POST /api/exchange - 제품으로 물/거름 교환
 router.post("/exchange", (req, res) => {
   const { nickname, sourceProduct, itemType } = req.body;
   if (!nickname || !sourceProduct || !itemType) {
