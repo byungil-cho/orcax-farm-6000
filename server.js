@@ -1,62 +1,26 @@
-// server.js (전기선 연결 & 구조 정비 완료)
+// server.js (메타버스급 감자 백엔드 통제실)
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const bodyParser = require("body-parser");
+const cors = require("cors");
+require("dotenv").config(); // .env로 환경변수 불러옴
 
 const app = express();
 const PORT = process.env.PORT || 6000;
 
-// 🔌 핵심: api.js 라우터 연결
+// 🔌 감자 전기 배선 통합
 const apiRouter = require("./api");
+
+// 🧠 미들웨어 등록
+app.use(cors());
+app.use(bodyParser.json());
 app.use("/api", apiRouter);
 
-app.use(bodyParser.json());
-app.use(express.static("public"));
-
-const DATA_PATH = path.join(__dirname, "data", "users.json");
-let users = {}, inventory = {}, exchangeLogs = {};
-
-function loadData() {
-  if (fs.existsSync(DATA_PATH)) {
-    const raw = fs.readFileSync(DATA_PATH);
-    const data = JSON.parse(raw);
-    users = data.users || {};
-    inventory = data.inventory || {};
-    exchangeLogs = data.exchangeLogs || {};
-  }
-}
-
-function saveData() {
-  const data = { users, inventory, exchangeLogs };
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
-}
-
-function initializeUser(nickname) {
-  if (!users[nickname]) {
-    users[nickname] = {
-      orcx: 5,
-      farmingCount: 2,
-      water: 10,
-      fertilizer: 10,
-      lastRecharge: Date.now(),
-      potatoCount: 0,
-      harvestCount: 0
-    };
-    inventory[nickname] = [];
-    exchangeLogs[nickname] = [];
-    saveData();
-  }
-}
-
-// ✅ 서버 상태 확인용 ping 엔드포인트 (기존 유지)
+// ✅ 상태 확인용 API
 app.get("/api/ping", (req, res) => {
-  res.json({ message: "pong" });
+  res.json({ message: "pong", meta: "감자 메타버스 가동 중" });
 });
 
-// ✅ api.js로 모든 핵심 API 기능 위임 완료
-
+// 🏁 서버 시동
 app.listen(PORT, () => {
-  loadData();
-  console.log("✅ 정상 작동: 감자 서버 가동 중");
+  console.log(`🚀 감자 서버 작동 중: http://localhost:${PORT}`);
 });
