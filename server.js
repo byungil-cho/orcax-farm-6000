@@ -1,4 +1,3 @@
-
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -11,10 +10,7 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 
 const DATA_PATH = path.join(__dirname, "data", "users.json");
-
-let users = {};
-let inventory = {};
-let exchangeLogs = {};
+let users = {}, inventory = {}, exchangeLogs = {};
 
 function loadData() {
   if (fs.existsSync(DATA_PATH)) {
@@ -48,77 +44,54 @@ function initializeUser(nickname) {
   }
 }
 
-function checkFarmingRecharge(nickname) {
-  const FARMING_INTERVAL_MS = 2 * 60 * 60 * 1000;
-  const MAX_FARMING_COUNT = 2;
-
-  const now = Date.now();
-  const last = users[nickname].lastRecharge || 0;
-  const elapsed = now - last;
-  const recovered = Math.floor(elapsed / FARMING_INTERVAL_MS);
-
-  if (recovered > 0) {
-    const newCount = Math.min(MAX_FARMING_COUNT, users[nickname].farmingCount + (2 * recovered));
-    users[nickname].farmingCount = newCount;
-    users[nickname].lastRecharge = last + recovered * FARMING_INTERVAL_MS;
-    saveData();
-  }
-}
+app.get("/api/ping", (req, res) => {
+  res.json({ message: "pong" });
+});
 
 app.get("/api/gamja", (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
-
   initializeUser(nickname);
-  checkFarmingRecharge(nickname);
-
-  const userData = users[nickname];
-  const userItems = inventory[nickname] || [];
-  const userLogs = exchangeLogs[nickname] || [];
-  const now = Date.now();
-  const nextRecharge = Math.max(0, (2 * 60 * 60 * 1000) - (now - userData.lastRecharge));
 
   res.json({
-    ...userData,
-    items: userItems,
-    exchangeLogs: userLogs,
-    nextRecharge
+    ...users[nickname],
+    items: inventory[nickname],
+    exchangeLogs: exchangeLogs[nickname]
   });
 });
 
 app.post("/api/harvest", (req, res) => {
   const { nickname } = req.body;
-  if (!nickname || !users[nickname]) return res.status(400).json({ error: "유저 정보 없음" });
+  if (!nickname || !users[nickname]) return res.status(400).json({ error: "유저 없음" });
 
   users[nickname].potatoCount += 10;
   users[nickname].harvestCount += 1;
   saveData();
-  res.json({ message: "감자 10개 수확 완료", potatoCount: users[nickname].potatoCount });
+
+  res.json({ message: "감자 10개 수확!", potatoCount: users[nickname].potatoCount });
 });
 
 app.post("/api/create-product", (req, res) => {
-  const { farm, type } = req.body;
-  if (!farm || !type || !users[farm]) return res.status(400).json({ error: "정보 없음" });
+  const { type, farm } = req.body;
+  if (!type || !farm || !users[farm]) return res.status(400).json({ error: "잘못된 요청" });
 
   if (users[farm].potatoCount < 1) {
-    return res.status(400).json({ error: "감자 부족" });
+    return res.status(400).json({ error: "감자 없음" });
   }
 
   users[farm].potatoCount -= 1;
-  const items = inventory[farm] || [];
-  const index = items.findIndex(i => i.name === type);
-  if (index !== -1) {
-    items[index].count += 1;
+  const items = inventory[farm];
+  const found = items.find(i => i.name === type);
+  if (found) {
+    found.count += 1;
   } else {
     items.push({ name: type, count: 1 });
   }
-  inventory[farm] = items;
   saveData();
-  res.json({ message: `${type} 1개 생산 완료` });
+  res.json({ message: `${type} 생성됨` });
 });
 
-loadData();
-
 app.listen(PORT, () => {
-  console.log(`✅ 감자 농장 서버 작동 중: http://localhost:${PORT}`);
+  loadData();
+  console.log("✅ 정상 작동: 감자 서버 가동 중");
 });
