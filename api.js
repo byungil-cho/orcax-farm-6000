@@ -1,22 +1,16 @@
-// api.js (몽고DB 연동 버전: 감자 서버 완전체 with 안전 연결)
+// api.js (닉네임 기반 처리, 전체 감자 API)
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 
-const mongoUrl = process.env.MONGO_URL;
-if (!mongoUrl) {
-  console.error("❌ MONGO_URL 환경변수가 설정되지 않았습니다.");
-  process.exit(1);
+if (!process.env.MONGO_URL) {
+  throw new Error("❌ MONGO_URL 환경변수가 필요합니다!");
 }
 
-mongoose.connect(mongoUrl, {
+mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log("✅ MongoDB 연결 성공"))
-  .catch(err => {
-    console.error("❌ MongoDB 연결 실패", err);
-    process.exit(1);
-  });
+});
 
 const userSchema = new mongoose.Schema({
   nickname: { type: String, required: true, unique: true },
@@ -48,7 +42,7 @@ function checkFarmingRecharge(user) {
   }
 }
 
-// 유저 정보 조회 및 자동 충전
+// GET 감자 현황
 router.get("/gamja", async (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
@@ -74,10 +68,10 @@ router.get("/gamja", async (req, res) => {
   });
 });
 
-// 감자 수확
+// POST 감자 수확
 router.post("/harvest", async (req, res) => {
   const { nickname, count } = req.body;
-  if (!nickname || !count) return res.status(400).json({ error: "요청 정보 부족" });
+  if (!nickname || count == null) return res.status(400).json({ error: "요청 정보 부족" });
 
   const user = await User.findOne({ nickname });
   if (!user) return res.status(404).json({ error: "유저 없음" });
@@ -90,12 +84,12 @@ router.post("/harvest", async (req, res) => {
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
 });
 
-// 제품 생성
+// POST 감자 제품 만들기
 router.post("/create-product", async (req, res) => {
-  const { type, farm } = req.body;
-  if (!type || !farm) return res.status(400).json({ error: "잘못된 요청" });
+  const { type, nickname } = req.body;
+  if (!type || !nickname) return res.status(400).json({ error: "잘못된 요청" });
 
-  const user = await User.findOne({ nickname: farm });
+  const user = await User.findOne({ nickname });
   if (!user) return res.status(404).json({ error: "유저 없음" });
 
   if (user.potatoCount < 1) {
@@ -111,7 +105,12 @@ router.post("/create-product", async (req, res) => {
   }
 
   await user.save();
-  res.json({ message: `${type} 생성됨` });
+  res.json({ message: `${type} 생성됨`, name: type });
+});
+
+// GET 서버 상태 확인용
+router.get("/ping", (_, res) => {
+  res.status(200).json({ status: "alive" });
 });
 
 module.exports = router;
