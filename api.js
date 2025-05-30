@@ -1,117 +1,96 @@
+// api.js (감자 밭의 두뇌)
 const express = require("express");
-const mongoose = require("mongoose");
 const router = express.Router();
 
-mongoose.connect(process.env.MONGO_URL || "mongodb://localhost:27017/gamjaFarm", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-const userSchema = new mongoose.Schema({
-  nickname: { type: String, required: true, unique: true },
-  orcx: { type: Number, default: 5 },
-  farmingCount: { type: Number, default: 2 },
-  water: { type: Number, default: 10 },
-  fertilizer: { type: Number, default: 10 },
-  lastRecharge: { type: Number, default: () => Date.now() },
-  potatoCount: { type: Number, default: 0 },
-  harvestCount: { type: Number, default: 0 },
-  inventory: { type: Array, default: [] },
-  exchangeLogs: { type: Array, default: [] },
-});
-
-const User = mongoose.model("User", userSchema);
-
+let users = {};
+let inventory = {};
+let exchangeLogs = {};
 const FARMING_INTERVAL_MS = 2 * 60 * 60 * 1000;
 const MAX_FARMING_COUNT = 2;
 
-function checkFarmingRecharge(user) {
+function initializeUser(nickname) {
+  if (!users[nickname]) {
+    users[nickname] = {
+      orcx: 5,
+      farmingCount: 2,
+      water: 10,
+      fertilizer: 10,
+      lastRecharge: Date.now(),
+      potatoCount: 0,
+      harvestCount: 0
+    };
+    inventory[nickname] = [];
+    exchangeLogs[nickname] = [];
+    return true;
+  }
+  return false;
+}
+
+function checkFarmingRecharge(nickname) {
   const now = Date.now();
-  const last = user.lastRecharge || 0;
+  const last = users[nickname].lastRecharge || 0;
   const elapsed = now - last;
   const recovered = Math.floor(elapsed / FARMING_INTERVAL_MS);
 
   if (recovered > 0) {
-    user.farmingCount = Math.min(MAX_FARMING_COUNT, user.farmingCount + recovered * 2);
-    user.lastRecharge = last + recovered * FARMING_INTERVAL_MS;
+    const newCount = Math.min(MAX_FARMING_COUNT, users[nickname].farmingCount + (2 * recovered));
+    users[nickname].farmingCount = newCount;
+    users[nickname].lastRecharge = last + recovered * FARMING_INTERVAL_MS;
   }
 }
 
-router.get("/gamja", async (req, res) => {
-  try {
-    const nickname = req.query.nickname;
-    if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
+router.get("/gamja", (req, res) => {
+  const nickname = req.query.nickname;
+  if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
 
-    let user = await User.findOne({ nickname });
-    let newUser = false;
+  const isNew = initializeUser(nickname);
+  checkFarmingRecharge(nickname);
 
-    if (!user) {
-      user = new User({ nickname });
-      newUser = true;
-    }
+  const userData = users[nickname];
+  const userItems = inventory[nickname] || [];
+  const userLogs = exchangeLogs[nickname] || [];
+  const lastRecharge = users[nickname].lastRecharge;
+  const now = Date.now();
+  const nextRecharge = Math.max(0, FARMING_INTERVAL_MS - (now - lastRecharge));
 
-    checkFarmingRecharge(user);
-    await user.save();
-
-    const now = Date.now();
-    const nextRecharge = Math.max(0, FARMING_INTERVAL_MS - (now - user.lastRecharge));
-
-    res.json({
-      ...user.toObject(),
-      nextRecharge,
-      newUser,
-    });
-  } catch (e) {
-    res.status(500).json({ error: "서버 오류", details: e.message });
-  }
+  res.json({
+    ...userData,
+    items: userItems,
+    exchangeLogs: userLogs,
+    nextRecharge,
+    newUser: isNew
+  });
 });
 
-router.post("/harvest", async (req, res) => {
-  try {
-    const { nickname, count } = req.body;
-    if (!nickname || count === undefined) return res.status(400).json({ error: "요청 정보 부족" });
+router.post("/harvest", (req, res) => {
+  const { nickname, count } = req.body;
+  if (!nickname || !users[nickname]) return res.status(400).json({ error: "유저 정보 없음" });
 
-    const amount = parseInt(count);
-    if (isNaN(amount) || amount <= 0) return res.status(400).json({ error: "잘못된 수확 수량" });
+  const amount = parseInt(count) || 0;
+  users[nickname].potatoCount += amount;
+  users[nickname].harvestCount += amount;
 
-    const user = await User.findOne({ nickname });
-    if (!user) return res.status(404).json({ error: "유저 없음" });
-
-    user.potatoCount += amount;
-    user.harvestCount += amount;
-
-    await user.save();
-    res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
-  } catch (e) {
-    res.status(500).json({ error: "서버 오류", details: e.message });
-  }
+  res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: users[nickname].potatoCount });
 });
 
-router.post("/create-product", async (req, res) => {
-  try {
-    const { type, farm } = req.body;
-    if (!type || !farm) return res.status(400).json({ error: "잘못된 요청" });
+router.post("/create-product", (req, res) => {
+  const { type, farm } = req.body;
+  if (!type || !farm || !users[farm]) return res.status(400).json({ error: "잘못된 요청" });
 
-    const user = await User.findOne({ nickname: farm });
-    if (!user) return res.status(404).json({ error: "유저 없음" });
-
-    if (user.potatoCount < 1) {
-      return res.status(400).json({ error: "감자 없음" });
-    }
-
-    user.potatoCount -= 1;
-    const item = user.inventory.find(i => i.name === type);
-    if (item) {
-      item.count += 1;
-    } else {
-      user.inventory.push({ name: type, count: 1 });
-    }
-
-    await user.save();
-    res.json({ message: `${type} 생성됨` });
-  } catch (e) {
-    res.status(500).json({ error: "서버 오류", details: e.message });
+  if (users[farm].potatoCount < 1) {
+    return res.status(400).json({ error: "감자 없음" });
   }
+
+  users[farm].potatoCount -= 1;
+  const items = inventory[farm];
+  const found = items.find(i => i.name === type);
+  if (found) {
+    found.count += 1;
+  } else {
+    items.push({ name: type, count: 1 });
+  }
+
+  res.json({ message: `${type} 생성됨`, name: type });
 });
 
 module.exports = router;
