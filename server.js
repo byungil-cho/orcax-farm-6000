@@ -1,39 +1,46 @@
+
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const apiRoutes = require('./api');
 
 const app = express();
 const PORT = process.env.PORT || 6000;
 
-// Middleware
+// 미들웨어 설정
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// MongoDB Connection
-const mongoUrl = process.env.MONGODB_URL;
+// MongoDB 연결
+const mongoUrl = process.env.MONGODB_URL || process.env.MONGO_URL;
 if (!mongoUrl) {
-  console.error("❌ MONGODB_URL is not defined in .env");
+  console.error("❌ MongoDB 연결 주소(MONGODB_URL 또는 MONGO_URL)가 정의되지 않았습니다.");
   process.exit(1);
 }
 
 mongoose.connect(mongoUrl, {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('✅ MongoDB connected');
-}).catch((err) => {
-  console.error('❌ MongoDB connection error:', err.message);
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log("✅ MongoDB 연결 완료");
+})
+.catch(err => {
+  console.error("❌ Mongo 연결 실패:", err.message);
+  process.exit(1);
 });
 
-// Routes
-app.use('/api', apiRoutes);
+// ✅ 기본 API 라우트 예시
+app.get("/api/status", (req, res) => {
+  res.json({ message: "감자 API 정상 작동 중!" });
+});
 
-// Start server
+// 여기에 다른 라우터들 계속 추가 가능
+
+// 서버 실행
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 감자 서버 ${PORT}번 포트에서 작동 중`);
 });
 
 
