@@ -1,30 +1,39 @@
-
-const express = require('express');
-const app = express();
-const cors = require('cors');
 require('dotenv').config();
-
-// Mongo 연결
+const express = require('express');
 const mongoose = require('mongoose');
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ Mongo 연결 성공!'))
-.catch(err => console.error('❌ Mongo 연결 실패:', err));
+const cors = require('cors');
+const apiRoutes = require('./api');
 
-// 미들웨어
+const app = express();
+const PORT = process.env.PORT || 6000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// ✅ API 라우터 연결
-const apiRouter = require('./api');
-app.use('/api', apiRouter);
+// MongoDB Connection
+const mongoUrl = process.env.MONGODB_URL;
+if (!mongoUrl) {
+  console.error("❌ MONGODB_URL is not defined in .env");
+  process.exit(1);
+}
 
-// 포트 설정 및 서버 시작
-const PORT = process.env.PORT || 6000;
-app.listen(PORT, () => {
-  console.log(`🚀 감자 서버 ${PORT}번 포트에서 실행 중!`);
+mongoose.connect(mongoUrl, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => {
+  console.log('✅ MongoDB connected');
+}).catch((err) => {
+  console.error('❌ MongoDB connection error:', err.message);
 });
+
+// Routes
+app.use('/api', apiRoutes);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
 
