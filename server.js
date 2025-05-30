@@ -1,32 +1,24 @@
-// 감자 메타버스 - 전체 소스 통합
+// 감자 메타버스 - 통합 실행형 서버
 
-// server.js
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const path = require("path");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
+// 기본 설정
 app.use(cors());
 app.use(express.json());
-app.use("/api", require("./api"));
 app.use(express.static("public"));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
-
-// api.js
-const express = require("express");
-const mongoose = require("mongoose");
-const router = express.Router();
-
+// 몽고 연결
 if (!process.env.MONGO_URL) {
   throw new Error("❌ MONGO_URL 환경변수가 필요합니다!");
 }
 
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 });
 
 const userSchema = new mongoose.Schema({
@@ -59,7 +51,9 @@ function checkFarmingRecharge(user) {
   }
 }
 
-router.get("/gamja", async (req, res) => {
+// API 라우터
+
+app.get("/api/gamja", async (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
 
@@ -84,7 +78,7 @@ router.get("/gamja", async (req, res) => {
   });
 });
 
-router.post("/harvest", async (req, res) => {
+app.post("/api/harvest", async (req, res) => {
   const { nickname, count } = req.body;
   if (!nickname || !count) return res.status(400).json({ error: "요청 정보 부족" });
 
@@ -99,7 +93,7 @@ router.post("/harvest", async (req, res) => {
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
 });
 
-router.post("/create-product", async (req, res) => {
+app.post("/api/create-product", async (req, res) => {
   const { type, farm, nickname } = req.body;
   if (!type || !farm || !nickname) return res.status(400).json({ error: "잘못된 요청" });
 
@@ -122,5 +116,9 @@ router.post("/create-product", async (req, res) => {
   res.json({ message: `${type} 생성됨` });
 });
 
-module.exports = router;
+// 서버 시작
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ 감자 메타버스 서버가 포트 ${PORT}에서 실행 중입니다`);
+});
 
