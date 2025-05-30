@@ -1,12 +1,22 @@
-// api.js (몽고DB 연동 버전: 감자 서버 완전체)
+// api.js (몽고DB 연동 버전: 감자 서버 완전체 with 안전 연결)
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 
-mongoose.connect(process.env.MONGO_URL || "mongodb://localhost:27017/gamjaFarm", {
+const mongoUrl = process.env.MONGO_URL;
+if (!mongoUrl) {
+  console.error("❌ MONGO_URL 환경변수가 설정되지 않았습니다.");
+  process.exit(1);
+}
+
+mongoose.connect(mongoUrl, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-});
+}).then(() => console.log("✅ MongoDB 연결 성공"))
+  .catch(err => {
+    console.error("❌ MongoDB 연결 실패", err);
+    process.exit(1);
+  });
 
 const userSchema = new mongoose.Schema({
   nickname: { type: String, required: true, unique: true },
@@ -38,6 +48,7 @@ function checkFarmingRecharge(user) {
   }
 }
 
+// 유저 정보 조회 및 자동 충전
 router.get("/gamja", async (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
@@ -63,6 +74,7 @@ router.get("/gamja", async (req, res) => {
   });
 });
 
+// 감자 수확
 router.post("/harvest", async (req, res) => {
   const { nickname, count } = req.body;
   if (!nickname || !count) return res.status(400).json({ error: "요청 정보 부족" });
@@ -78,6 +90,7 @@ router.post("/harvest", async (req, res) => {
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
 });
 
+// 제품 생성
 router.post("/create-product", async (req, res) => {
   const { type, farm } = req.body;
   if (!type || !farm) return res.status(400).json({ error: "잘못된 요청" });
