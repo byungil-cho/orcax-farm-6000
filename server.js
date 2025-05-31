@@ -1,4 +1,3 @@
-
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,6 +10,10 @@ const PORT = process.env.PORT || 6000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// 🔥 핵심 추가 라인
+const apiRoutes = require('./routes/api');
+app.use('/api', apiRoutes);
 
 // MongoDB 연결
 const mongoUrl = process.env.MONGODB_URL || process.env.MONGO_URL;
@@ -31,12 +34,10 @@ mongoose.connect(mongoUrl, {
   process.exit(1);
 });
 
-// ✅ 기본 API 라우트 예시
+// 테스트용 기본 API
 app.get("/api/status", (req, res) => {
   res.json({ message: "감자 API 정상 작동 중!" });
 });
-
-// 여기에 다른 라우터들 계속 추가 가능
 
 // 서버 실행
 app.listen(PORT, () => {
