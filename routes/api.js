@@ -1,4 +1,3 @@
-// api.js (닉네임 기반 처리, 전체 감자 API)
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
@@ -84,7 +83,7 @@ router.post("/harvest", async (req, res) => {
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
 });
 
-// POST 감자 제품 만들기
+// ✅ 수정된 감자 제품 만들기 (type 누적 저장)
 router.post("/create-product", async (req, res) => {
   const { type, nickname } = req.body;
   if (!type || !nickname) return res.status(400).json({ error: "잘못된 요청" });
@@ -93,19 +92,22 @@ router.post("/create-product", async (req, res) => {
   if (!user) return res.status(404).json({ error: "유저 없음" });
 
   if (user.potatoCount < 1) {
-    return res.status(400).json({ error: "감자 없음" });
+    return res.status(400).json({ error: "감자가 부족합니다" });
   }
 
   user.potatoCount -= 1;
-  const item = user.inventory.find(i => i.name === type);
+
+  const fullType = `감자${type}`;
+  const item = user.inventory.find(i => i.type === fullType);
+
   if (item) {
     item.count += 1;
   } else {
-    user.inventory.push({ name: type, count: 1 });
+    user.inventory.push({ type: fullType, count: 1 });
   }
 
   await user.save();
-  res.json({ message: `${type} 생성됨`, name: type });
+  res.json({ message: `${fullType} 1개 생산 완료`, type: fullType });
 });
 
 // GET 서버 상태 확인용
