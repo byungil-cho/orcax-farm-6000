@@ -41,7 +41,7 @@ function checkFarmingRecharge(user) {
   }
 }
 
-// GET 감자 현황
+// GET 감자 현황 + 쿨타임 정보 포함
 router.get("/gamja", async (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ error: "닉네임이 없습니다" });
@@ -83,7 +83,7 @@ router.post("/harvest", async (req, res) => {
   res.json({ message: `감자 ${amount}개 수확 반영 완료`, total: user.potatoCount });
 });
 
-// ✅ 수정된 감자 제품 만들기 (type 누적 저장)
+// POST 감자 제품 만들기 (중복 누적 포함)
 router.post("/create-product", async (req, res) => {
   const { type, nickname } = req.body;
   if (!type || !nickname) return res.status(400).json({ error: "잘못된 요청" });
@@ -97,8 +97,8 @@ router.post("/create-product", async (req, res) => {
 
   user.potatoCount -= 1;
 
-  const fullType = `감자${type}`;
-  const item = user.inventory.find(i => i.type === fullType);
+  const fullType = `감자${type.trim()}`;
+  const item = user.inventory.find(i => (i.type || '').trim() === fullType);
 
   if (item) {
     item.count += 1;
@@ -106,7 +106,9 @@ router.post("/create-product", async (req, res) => {
     user.inventory.push({ type: fullType, count: 1 });
   }
 
+  user.markModified('inventory');
   await user.save();
+
   res.json({ message: `${fullType} 1개 생산 완료`, type: fullType });
 });
 
