@@ -1,48 +1,20 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>감자 농장</title>
 </head>
 <body>
-  <h1>🐳 감자 농장에 오신 걸 환영합니다!</h1>
-  <p>서버 정상 작동 중입니다.</p>
+  <h1>🥔 감자 농장에 오신 걸 환영합니다!</h1>
+  <p>서버 상태 확인: <span id="status">불러오는 중...</span></p>
   <script>
-    const nickname = localStorage.getItem("nickname") || "범고래X";
-    localStorage.setItem("nickname", nickname);
-
-    // 공통 응답 체크 함수
-    function handleResponse(res) {
-      if (!res.ok) {
-        throw new Error(`응답 실패 (${res.status}): ${res.statusText}`);
-      }
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error("서버가 JSON 대신 HTML 등을 리턴함. content-type: " + contentType);
-      }
-      return res.json();
-    }
-
-    fetch("api/ping")
-      .then(handleResponse)
+    fetch('/api/status')
+      .then(res => res.json())
       .then(data => {
-        const div = document.createElement("div");
-        div.textContent = "✅ 서버 응답: " + data.message;
-        document.body.appendChild(div);
-
-        return fetch("api/gamja?nickname=" + nickname);
-      })
-      .then(handleResponse)
-      .then(data => {
-        const info = document.createElement("pre");
-        info.textContent = JSON.stringify(data, null, 2);
-        document.body.appendChild(info);
+        document.getElementById('status').innerText = data.message;
       })
       .catch(err => {
-        const errBox = document.createElement("div");
-        errBox.style.color = "red";
-        errBox.textContent = "❌ 서버 문제: " + err.message;
-        document.body.appendChild(errBox);
+        document.getElementById('status').innerText = '❌ 서버 연결 실패';
       });
   </script>
 </body>
