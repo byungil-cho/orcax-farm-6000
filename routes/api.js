@@ -1,97 +1,183 @@
-
-const express = require("express");
-const mongoose = require("mongoose");
+const express = require('express');
 const router = express.Router();
+const Farm = require('../models/Farm');
+const Product = require('../models/Product');
+const ProductLog = require('../models/ProductLog');
 
-mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
-const userSchema = new mongoose.Schema({
-  nickname: { type: String, required: true, unique: true },
-  potatoCount: { type: Number, default: 0 },
-  harvestCount: { type: Number, default: 0 },
-  inventory: { type: Array, default: [] }
-});
-
-const User = mongoose.model("User", userSchema);
-
-// GET 감자 현황
-router.get("/gamja", async (req, res) => {
-  const nickname = req.query.nickname;
-  if (!nickname) return res.status(400).json({ error: "닉네임 없음" });
-
-  let user = await User.findOne({ nickname });
+/* ========== 로그인 ========== */
+router.post('/login', async (req, res) => {
+  const { nickname } = req.body;
+  let user = await Farm.findOne({ nickname });
   if (!user) {
-    user = new User({ nickname });
-    await user.save();
+    user = await Farm.create({
+      nickname,
+      water: 10,
+      fertilizer: 10,
+      token: 5,
+      lastFreeTime: new Date(),
+      freeFarmCount: 2,
+      seedPotato: 0,
+      potatoCount: 0
+    });
+  }
+  res.json({ success: true, nickname });
+});
+
+/* ========== 사용자 전체 리스트 ========== */
+router.get('/users', async (req, res) => {
+  try {
+    const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+});
+
+/* ========== 감자 가공소 ========== */
+router.post('/factory/process', async (req, res) => {
+  const { nickname, productName } = req.body;
+  const farm = await Farm.findOne({ nickname });
+  if (!farm || farm.potatoCount <= 0) {
+    return res.json({ success: false, message: '감자가 부족합니다.' });
   }
 
-  res.json({
-    message: `${nickname}님의 감자 상태를 불러왔습니다.`,
-    nickname: user.nickname,
-    potatoCount: user.potatoCount,
-    harvestCount: user.harvestCount,
-    inventory: user.inventory
+  const product = await Product.create({
+    productName,
+    owner: nickname,
+    isSold: false
   });
+
+  farm.potatoCount -= 1;
+  await farm.save();
+
+  res.json({ success: true, product });
 });
 
-// 감자 유저 데이터 조회
-router.get("/userdata", async (req, res) => {
-  const nickname = req.query.nickname;
-  if (!nickname) return res.status(400).json({ error: "닉네임 없음" });
-
-  const user = await User.findOne({ nickname });
-  if (!user) return res.status(404).json({ error: "유저 없음" });
-
-  res.json({
-    nickname: user.nickname,
-    potatoCount: user.potatoCount,
-    harvestCount: user.harvestCount,
-    inventory: user.inventory
-  });
+router.get('/factory/products/:nickname', async (req, res) => {
+  const products = await Product.find({ owner: req.params.nickname, isSold: false }).sort({ createdAt: -1 });
+  res.json({ success: true, products });
 });
 
-// 감자 수확
-router.post("/harvest", async (req, res) => {
-  const { nickname, count } = req.body;
-  const user = await User.findOne({ nickname });
-  if (!user) return res.status(404).json({ error: "유저 없음" });
+/* ========== 농사 기능 ========== */
+router.get('/farm/status/:nickname', async (req, res) => {
+  const farm = await Farm.findOne({ nickname: req.params.nickname });
+  if (!farm) return res.json({ success: false });
 
-  user.potatoCount += count;
-  user.harvestCount += count;
-  await user.save();
+  const now = new Date();
+  const elapsed = (now - farm.lastFreeTime) / 1000 / 60 / 60;
+  let freeFarmCount = farm.freeFarmCount;
+  let timeRemaining = 0;
 
-  res.json({ message: `${count}개 수확`, total: user.potatoCount });
-});
-
-// 감자 제품 만들기
-router.post("/create-product", async (req, res) => {
-  const { type, nickname } = req.body;
-  const user = await User.findOne({ nickname });
-  if (!user || !type) return res.status(400).json({ error: "잘못된 요청" });
-
-  if (user.potatoCount < 1) {
-    return res.status(400).json({ error: "감자 부족" });
-  }
-
-  user.potatoCount -= 1;
-  const item = user.inventory.find(i => i.type === type);
-  if (item) {
-    item.count += 1;
+  if (elapsed >= 2) {
+    freeFarmCount = 2;
+    farm.freeFarmCount = 2;
+    farm.lastFreeTime = now;
+    await farm.save();
   } else {
-    user.inventory.push({ type, count: 1 });
+    timeRemaining = Math.ceil((2 - elapsed) * 60);
   }
 
-  user.markModified('inventory');
-  await user.save();
-
-  res.json({ message: `${type} 생산됨`, type });
+  res.json({
+    success: true,
+    freeFarmCount,
+    water: farm.water,
+    fertilizer: farm.fertilizer,
+    token: farm.token,
+    seedPotato: farm.seedPotato || 0,
+    potatoCount: farm.potatoCount || 0,
+    timeRemaining
+  });
 });
 
-router.get("/ping", (_, res) => {
-  res.json({ status: "alive" });
+router.post('/farm/useFree', async (req, res) => {
+  const { nickname } = req.body;
+  const farm = await Farm.findOne({ nickname });
+  if (!farm || farm.freeFarmCount <= 0) return res.json({ success: false });
+  farm.freeFarmCount--;
+  farm.potatoCount++;
+  await farm.save();
+  res.json({ success: true, remaining: farm.freeFarmCount, potatoCount: farm.potatoCount });
+});
+
+router.post('/farm/useSeed', async (req, res) => {
+  const { nickname } = req.body;
+  const farm = await Farm.findOne({ nickname });
+  if (!farm || farm.seedPotato <= 0) return res.json({ success: false, message: '씨감자 없음' });
+  farm.seedPotato--;
+  farm.potatoCount++;
+  await farm.save();
+  res.json({ success: true, seedPotato: farm.seedPotato, potatoCount: farm.potatoCount });
+});
+
+router.post('/farm/buySeed', async (req, res) => {
+  const { nickname, quantity } = req.body;
+  const cost = quantity;
+  const farm = await Farm.findOne({ nickname });
+  if (!farm || farm.token < cost) return res.json({ success: false, message: '토큰 부족' });
+
+  farm.token -= cost;
+  farm.potatoCount += quantity;
+  await farm.save();
+
+  res.json({ success: true, seedPotatoUsed: quantity, potatoCount: farm.potatoCount, token: farm.token });
+});
+
+/* ========== 마켓 판매 ========== */
+router.post('/market/register', async (req, res) => {
+  const { productId, nickname } = req.body;
+  const product = await Product.findById(productId);
+  if (!product || product.isSold) return res.json({ success: false, message: "유효하지 않은 제품" });
+
+  const products = await Product.aggregate([
+    { $group: { _id: '$productName', totalCount: { $sum: 1 } } }
+  ]);
+  const total = products.reduce((sum, p) => sum + p.totalCount, 0);
+  const avg = total / products.length;
+  const currentCount = products.find(p => p._id === product.productName)?.totalCount || 1;
+  const price = parseFloat((1 / (currentCount / avg)).toFixed(2));
+
+  product.isSold = true;
+  await product.save();
+
+  await ProductLog.create({
+    productName: product.productName,
+    action: "판매",
+    owner: nickname,
+    price: price,
+    timestamp: new Date()
+  });
+
+  await Farm.findOneAndUpdate(
+    { nickname },
+    { $inc: { token: price } }
+  );
+
+  res.json({ success: true, tokenGain: price });
+});
+
+/* ========== 시세 조회 ========== */
+router.get('/market', async (req, res) => {
+  try {
+    const prices = await Product.aggregate([
+      { $match: { isSold: true } },
+      { $group: { _id: '$productName', price: { $avg: "$price" } } }
+    ]);
+
+    res.json(prices.map(p => ({
+      name: p._id,
+      price: parseFloat(p.price.toFixed(2))
+    })));
+  } catch (err) {
+    res.status(500).json({ success: false, message: "시세 계산 실패" });
+  }
+});
+
+/* ========== 로그 확인 ========== */
+router.get('/logs/:nickname', async (req, res) => {
+  const logs = await ProductLog.find({ owner: req.params.nickname })
+    .sort({ timestamp: -1 })
+    .limit(100);
+  res.json({ logs });
 });
 
 module.exports = router;
