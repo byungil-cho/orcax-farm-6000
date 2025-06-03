@@ -163,34 +163,5 @@ router.get('/logs/:nickname', async (req, res) => {
   res.json({ logs });
 });
 
-/* ========== 사용자 정보 조회 (❗️이게 빠져 있었음) ========== */
-router.get('/userdata', async (req, res) => {
-  const { nickname } = req.query;
-  if (!nickname) return res.status(400).json({ success: false, message: '닉네임 없음' });
-
-  const farm = await Farm.findOne({ nickname });
-  if (!farm) return res.status(404).json({ success: false, message: '유저 없음' });
-
-  const products = await Product.find({ owner: nickname, isSold: false });
-
-  const inventory = products.reduce((acc, item) => {
-    const found = acc.find(p => p.type === item.productName);
-    if (found) {
-      found.count++;
-    } else {
-      acc.push({ type: item.productName, count: 1 });
-    }
-    return acc;
-  }, []);
-
-  res.json({
-    water: farm.water,
-    fertilizer: farm.fertilizer,
-    potatoCount: farm.potatoCount,
-    token: farm.token || 0,
-    inventory
-  });
-});
-
 module.exports = router;
 
