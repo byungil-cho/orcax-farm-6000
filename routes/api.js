@@ -219,5 +219,3 @@ router.get('/logs/:nickname', async (req, res) => {
 });
 
 module.exports = router;
-
-
