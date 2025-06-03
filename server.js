@@ -15,11 +15,15 @@ if (!mongoUrl) {
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ API 라우터 연결
+// ✅ API 라우터 연결 먼저
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
+
+// ✅ 서버 상태 확인용 라우트
+app.get("/api/status", (req, res) => {
+  res.json({ message: "🥔 감자 서버 작동 중!" });
+});
 
 // ✅ MongoDB 연결
 mongoose.connect(mongoUrl, {
@@ -34,13 +38,12 @@ mongoose.connect(mongoUrl, {
   process.exit(1);
 });
 
-// ✅ 서버 상태 확인용 라우트
-app.get("/api/status", (req, res) => {
-  res.json({ message: "🥔 감자 서버 작동 중!" });
-});
+// ✅ 정적 파일은 가장 마지막에!
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ 서버 실행
 app.listen(PORT, () => {
   console.log(`🚀 감자 서버가 ${PORT}번 포트에서 실행 중입니다!`);
 });
+
 
