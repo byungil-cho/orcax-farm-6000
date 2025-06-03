@@ -33,6 +33,33 @@ router.get('/users', async (req, res) => {
   }
 });
 
+/* ========== ✨ 새로운 /userdata 라우터 추가 ========== */
+router.get('/userdata', async (req, res) => {
+  const { nickname } = req.query;
+  if (!nickname) {
+    return res.status(400).json({ success: false, message: 'nickname이 필요함 이노마' });
+  }
+
+  const user = await Farm.findOne({ nickname });
+  if (!user) {
+    return res.status(404).json({ success: false, message: '없는 유저다 이놈아' });
+  }
+
+  res.json({
+    success: true,
+    user: {
+      nickname: user.nickname,
+      water: user.water,
+      fertilizer: user.fertilizer,
+      token: user.token,
+      seedPotato: user.seedPotato || 0,
+      potatoCount: user.potatoCount || 0,
+      freeFarmCount: user.freeFarmCount || 0,
+      lastFreeTime: user.lastFreeTime || null
+    }
+  });
+});
+
 /* ========== 감자 가공소 ========== */
 router.post('/factory/process', async (req, res) => {
   const { nickname, productName } = req.body;
@@ -155,6 +182,34 @@ router.post('/market/register', async (req, res) => {
   res.json({ success: true, tokenGain: price });
 });
 
+/* ========== 전광판 시세 제공 ========== */
+router.get('/market', async (req, res) => {
+  try {
+    const products = await Product.aggregate([
+      { $match: { isSold: true } },
+      {
+        $group: {
+          _id: "$productName",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const total = products.reduce((sum, p) => sum + p.count, 0);
+    const avg = total / (products.length || 1);
+
+    const result = products.map(p => ({
+      name: p._id,
+      price: parseFloat((1 / (p.count / avg)).toFixed(2))
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("시세 불러오기 실패:", err);
+    res.status(500).json({ message: "서버 오류" });
+  }
+});
+
 /* ========== 로그 확인 ========== */
 router.get('/logs/:nickname', async (req, res) => {
   const logs = await ProductLog.find({ owner: req.params.nickname })
@@ -164,4 +219,5 @@ router.get('/logs/:nickname', async (req, res) => {
 });
 
 module.exports = router;
+
 
