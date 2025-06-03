@@ -33,10 +33,9 @@ router.get('/users', async (req, res) => {
   }
 });
 
-/* ========== ✨ /userdata 추가 ========== */
+/* ========== ✨ 새로운 /userdata 라우터 추가 ========== */
 router.get('/userdata', async (req, res) => {
   const { nickname } = req.query;
-
   if (!nickname) {
     return res.status(400).json({ success: false, message: 'nickname이 필요함 이노마' });
   }
@@ -219,5 +218,11 @@ router.get('/logs/:nickname', async (req, res) => {
   res.json({ logs });
 });
 
+/* ========== 🥔 감자 전용 API ========== */
+router.get('/감자', (req, res) => {
+  res.json({ 감자: "🥔 감자 도착 완료. 서버도 살아있고 나도 이젠 지쳤다." });
+});
+
 module.exports = router;
+
 
