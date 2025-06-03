@@ -1,4 +1,4 @@
-// ✅ api.js 전체 수정본
+
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
@@ -30,6 +30,22 @@ router.get("/gamja", async (req, res) => {
 
   res.json({
     message: `${nickname}님의 감자 상태를 불러왔습니다.`,
+    nickname: user.nickname,
+    potatoCount: user.potatoCount,
+    harvestCount: user.harvestCount,
+    inventory: user.inventory
+  });
+});
+
+// 감자 유저 데이터 조회
+router.get("/userdata", async (req, res) => {
+  const nickname = req.query.nickname;
+  if (!nickname) return res.status(400).json({ error: "닉네임 없음" });
+
+  const user = await User.findOne({ nickname });
+  if (!user) return res.status(404).json({ error: "유저 없음" });
+
+  res.json({
     nickname: user.nickname,
     potatoCount: user.potatoCount,
     harvestCount: user.harvestCount,
