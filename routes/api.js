@@ -155,34 +155,6 @@ router.post('/market/register', async (req, res) => {
   res.json({ success: true, tokenGain: price });
 });
 
-/* ========== 전광판 시세 제공 ========== */
-router.get('/market', async (req, res) => {
-  try {
-    const products = await Product.aggregate([
-      { $match: { isSold: true } },
-      {
-        $group: {
-          _id: "$productName",
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const total = products.reduce((sum, p) => sum + p.count, 0);
-    const avg = total / (products.length || 1);
-
-    const result = products.map(p => ({
-      name: p._id,
-      price: parseFloat((1 / (p.count / avg)).toFixed(2))
-    }));
-
-    res.json(result);
-  } catch (err) {
-    console.error("시세 불러오기 실패:", err);
-    res.status(500).json({ message: "서버 오류" });
-  }
-});
-
 /* ========== 로그 확인 ========== */
 router.get('/logs/:nickname', async (req, res) => {
   const logs = await ProductLog.find({ owner: req.params.nickname })
@@ -190,7 +162,8 @@ router.get('/logs/:nickname', async (req, res) => {
     .limit(100);
   res.json({ logs });
 });
-// ✅ 사용자 정보 조회: /api/userdata?nickname=방고래X
+
+/* ========== 사용자 정보 조회 (❗️이게 빠져 있었음) ========== */
 router.get('/userdata', async (req, res) => {
   const { nickname } = req.query;
   if (!nickname) return res.status(400).json({ success: false, message: '닉네임 없음' });
