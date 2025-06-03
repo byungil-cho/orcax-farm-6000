@@ -155,20 +155,31 @@ router.post('/market/register', async (req, res) => {
   res.json({ success: true, tokenGain: price });
 });
 
-/* ========== 시세 조회 ========== */
+/* ========== 전광판 시세 제공 ========== */
 router.get('/market', async (req, res) => {
   try {
-    const prices = await Product.aggregate([
+    const products = await Product.aggregate([
       { $match: { isSold: true } },
-      { $group: { _id: '$productName', price: { $avg: "$price" } } }
+      {
+        $group: {
+          _id: "$productName",
+          count: { $sum: 1 }
+        }
+      }
     ]);
 
-    res.json(prices.map(p => ({
+    const total = products.reduce((sum, p) => sum + p.count, 0);
+    const avg = total / (products.length || 1);
+
+    const result = products.map(p => ({
       name: p._id,
-      price: parseFloat(p.price.toFixed(2))
-    })));
+      price: parseFloat((1 / (p.count / avg)).toFixed(2))
+    }));
+
+    res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, message: "시세 계산 실패" });
+    console.error("시세 불러오기 실패:", err);
+    res.status(500).json({ message: "서버 오류" });
   }
 });
 
@@ -181,3 +192,4 @@ router.get('/logs/:nickname', async (req, res) => {
 });
 
 module.exports = router;
+
