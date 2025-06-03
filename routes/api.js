@@ -33,9 +33,10 @@ router.get('/users', async (req, res) => {
   }
 });
 
-/* ========== ✨ 새로운 /userdata 라우터 추가 ========== */
+/* ========== ✨ /userdata 추가 ========== */
 router.get('/userdata', async (req, res) => {
   const { nickname } = req.query;
+
   if (!nickname) {
     return res.status(400).json({ success: false, message: 'nickname이 필요함 이노마' });
   }
@@ -219,3 +220,4 @@ router.get('/logs/:nickname', async (req, res) => {
 });
 
 module.exports = router;
+
