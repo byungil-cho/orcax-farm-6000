@@ -1,47 +1,59 @@
 
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const passport = require("passport");
-const session = require("express-session");
-const KakaoStrategy = require("passport-kakao").Strategy;
-const Farm = require("./models/Farm");
+const express = require('express');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+const KakaoStrategy = require('passport-kakao').Strategy;
 
-require("dotenv").config();
+const Farm = require('./models/Farm');
 
+dotenv.config();
 const app = express();
-app.use(cors());
 app.use(express.json());
-app.use(session({ secret: "orcax", resave: false, saveUninitialized: true }));
+app.use(cors());
+app.use(session({ secret: 'orcax', resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB 연결 성공"))
-  .catch(err => console.error("MongoDB 연결 실패:", err));
+const PORT = 6000;
+
+// Mongo 연결
+mongoose.connect(process.env.MONGO_URL, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('MongoDB 연결 성공');
+}).catch(err => {
+  console.error('MongoDB 연결 실패:', err);
+});
+
+// Passport 설정
+console.log("💡 KAKAO REST API KEY:", process.env.KAKAO_REST_API_KEY);
 
 passport.use(new KakaoStrategy({
   clientID: process.env.KAKAO_REST_API_KEY,
   callbackURL: "/auth/kakao/callback"
 }, async (accessToken, refreshToken, profile, done) => {
-  const kakaoId = profile.id;
-  const nickname = profile._json.properties.nickname;
-
-  let user = await Farm.findOne({ kakaoId });
-  if (!user) {
-    user = await Farm.create({
-      kakaoId,
-      nickname,
-      water: 10,
-      fertilizer: 10,
-      token: 5,
-      lastFreeTime: new Date(),
-      freeFarmCount: 2,
-      seedPotato: 0,
-      potatoCount: 0
-    });
+  try {
+    let user = await Farm.findOne({ nickname: profile.username });
+    if (!user) {
+      user = await Farm.create({
+        nickname: profile.username,
+        water: 10,
+        fertilizer: 10,
+        token: 5,
+        lastFreeTime: new Date(),
+        freeFarmCount: 2,
+        seedPotato: 0,
+        potatoCount: 0
+      });
+    }
+    return done(null, user);
+  } catch (err) {
+    return done(err);
   }
-  return done(null, user);
 }));
 
 passport.serializeUser((user, done) => {
@@ -52,12 +64,12 @@ passport.deserializeUser(async (id, done) => {
   done(null, user);
 });
 
+// 라우터
 app.get("/auth/kakao", passport.authenticate("kakao"));
-
 app.get("/auth/kakao/callback", passport.authenticate("kakao", {
-  failureRedirect: "/login"
+  failureRedirect: "/fail"
 }), (req, res) => {
-  res.redirect(`/gamja-main.html?nickname=${encodeURIComponent(req.user.nickname)}`);
+  res.redirect(`/gamja-main.html?nickname=${req.user.nickname}`);
 });
 
 app.get("/api/userdata", async (req, res) => {
@@ -67,10 +79,6 @@ app.get("/api/userdata", async (req, res) => {
   res.json({ success: true, user });
 });
 
-app.get("/api/status", (req, res) => {
-  res.send("감자 서버 작동 중");
-});
-
-app.listen(6000, () => {
-  console.log("서버 포트 6000에서 실행 중");
+app.listen(PORT, () => {
+  console.log(`서버 포트 ${PORT}에서 실행 중`);
 });
