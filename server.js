@@ -21,7 +21,7 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGO_URL,
-    ttl: 14 * 24 * 60 * 60 // 14일 유지
+    ttl: 14 * 24 * 60 * 60
   })
 }));
 
@@ -71,6 +71,11 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   const user = await Farm.findById(id);
   done(null, user);
+});
+
+// ✅ 기본 루트 경로 처리 추가
+app.get('/', (req, res) => {
+  res.send('🐳 OrcaX 감자 서버가 정상 작동 중입니다!');
 });
 
 app.get("/auth/kakao", passport.authenticate("kakao"));
