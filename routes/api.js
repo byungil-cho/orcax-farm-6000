@@ -1,3 +1,4 @@
+
 const express = require('express');
 const router = express.Router();
 const Farm = require('../models/Farm');
@@ -218,7 +219,7 @@ router.get('/logs/:nickname', async (req, res) => {
   res.json({ logs });
 });
 
-/* ========== 🥔 감자 전용 API ========== */
+/* ========== 감자 상태 확인용 ========== */
 router.get('/감자', (req, res) => {
   res.json({ 감자: "🥔 감자 도착 완료. 서버도 살아있고 나도 이젠 지쳤다." });
 });
