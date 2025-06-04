@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const KakaoStrategy = require('passport-kakao').Strategy;
 
@@ -13,13 +14,22 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use(session({ secret: 'orcax', resave: false, saveUninitialized: true }));
+
+app.use(session({
+  secret: 'orcax',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URL,
+    ttl: 14 * 24 * 60 * 60 // 14일 유지
+  })
+}));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 const PORT = 6000;
 
-// Mongo 연결
 mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -29,7 +39,6 @@ mongoose.connect(process.env.MONGO_URL, {
   console.error('MongoDB 연결 실패:', err);
 });
 
-// Passport 설정
 console.log("💡 KAKAO REST API KEY:", process.env.KAKAO_REST_API_KEY);
 
 passport.use(new KakaoStrategy({
@@ -64,7 +73,6 @@ passport.deserializeUser(async (id, done) => {
   done(null, user);
 });
 
-// 라우터
 app.get("/auth/kakao", passport.authenticate("kakao"));
 app.get("/auth/kakao/callback", passport.authenticate("kakao", {
   failureRedirect: "/fail"
