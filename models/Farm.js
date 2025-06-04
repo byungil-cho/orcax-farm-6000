@@ -1,8 +1,7 @@
 
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const farmSchema = new mongoose.Schema({
-  kakaoId: String,
   nickname: String,
   water: Number,
   fertilizer: Number,
@@ -13,4 +12,4 @@ const farmSchema = new mongoose.Schema({
   potatoCount: Number
 });
 
-module.exports = mongoose.model("Farm", farmSchema);
+module.exports = mongoose.model('Farm', farmSchema);
