@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Farm = require('./models/Farm'); // 실경로에 맞게 수정
+const Farm = require('./models/Farm');
 const Product = require('./models/Product');
 const ProductLog = require('./models/ProductLog');
 
@@ -184,8 +184,6 @@ router.get('/market', async (req, res) => {
       }
     ]);
 
-    const Farm = require('../model/farm');
-
     const total = products.reduce((sum, p) => sum + p.count, 0);
     const avg = total / (products.length || 1);
 
@@ -207,11 +205,6 @@ router.get('/logs/:nickname', async (req, res) => {
     .sort({ timestamp: -1 })
     .limit(100);
   res.json({ logs });
-});
-
-// 감자 상태
-app.get('/api/ping', (req, res) => {
-  res.json({ success: true, message: "감자 서버 살아있음!" });
 });
 
 module.exports = router;
