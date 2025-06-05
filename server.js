@@ -1,23 +1,36 @@
 
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const app = express();
+const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const passport = require('passport');
 require('dotenv').config();
 
+const app = express();
 const PORT = process.env.PORT || 6000;
 
 app.use(cors());
 app.use(express.json());
 
-// MongoDB 연결
+// ✅ MongoDB 연결
 mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/orcax', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('MongoDB 연결됨'))
   .catch(err => console.error('MongoDB 연결 실패:', err));
 
-// Farm 모델 정의 (카카오 닉네임 기반 사용자 관리)
+// ✅ 세션 및 패스포트 설정
+app.use(session({
+  secret: 'orcax_secret',
+  resave: false,
+  saveUninitialized: true,
+  store: MongoStore.create({ mongoUrl: process.env.MONGO_URL || 'mongodb://localhost:27017/orcax' })
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ✅ Farm 모델 정의 (카카오 닉네임 기반 사용자 관리)
 const farmSchema = new mongoose.Schema({
   nickname: String, // ✅ 카카오 로그인에서 받은 닉네임
   water: Number,
@@ -27,7 +40,7 @@ const farmSchema = new mongoose.Schema({
 });
 const Farm = mongoose.model('Farm', farmSchema);
 
-// 전체 사용자 조회
+// ✅ 전체 사용자 조회
 app.get('/api/users', async (req, res) => {
   try {
     const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
@@ -37,7 +50,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// 카카오 닉네임으로 개별 사용자 조회
+// ✅ 개별 사용자 조회 (카카오 닉네임 기준)
 app.get('/api/userdata', async (req, res) => {
   const nickname = req.query.nickname;
   if (!nickname) return res.status(400).json({ success: false, message: '카카오 닉네임이 필요합니다.' });
@@ -52,6 +65,7 @@ app.get('/api/userdata', async (req, res) => {
   }
 });
 
+// ✅ 서버 시작
 app.listen(PORT, () => {
   console.log(`서버 실행 중: http://localhost:${PORT}`);
 });
