@@ -42,8 +42,8 @@ const apiRoutes = require('./api'); // 같은 폴더에 api.js가 있어야 함
 app.use('/api', apiRoutes);
 
 // 🧪 감자 핑 테스트
-app.get('/감자', (req, res) => {
-  res.json({ 감자: "🥔 감자 살아있음! 서버도 잘 작동 중이오." });
+app.get('/api/ping', (req, res) => {
+  res.json({ success: true, message: "감자 서버 살아있음!" });
 });
 
 // 🚀 감자 서버 실행
