@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -10,62 +9,44 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 6000;
 
-app.use(cors());
+// 🔧 CORS 설정 – 감자 외부 접근 허용
+app.use(cors({
+  origin: 'https://climbing-wholly-grouper.ngrok-free.app',
+  credentials: true
+}));
+
 app.use(express.json());
 
-// ✅ MongoDB 연결
+// 🧪 몽고DB 감자창고 연결
 mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/orcax', {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log('MongoDB 연결됨'))
-  .catch(err => console.error('MongoDB 연결 실패:', err));
+}).then(() => console.log('✅ MongoDB 연결 완료'))
+  .catch(err => console.error('❌ MongoDB 연결 실패:', err));
 
-// ✅ 세션 및 패스포트 설정
+// 🛠️ 세션 설정 – 쿠키로 감자들 기억
 app.use(session({
   secret: 'orcax_secret',
   resave: false,
   saveUninitialized: true,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URL || 'mongodb://localhost:27017/orcax' })
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URL || 'mongodb://localhost:27017/orcax'
+  })
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ✅ Farm 모델 정의 (카카오 닉네임 기반 사용자 관리)
-const farmSchema = new mongoose.Schema({
-  nickname: String, // ✅ 카카오 로그인에서 받은 닉네임
-  water: Number,
-  fertilizer: Number,
-  token: Number,
-  potatoCount: Number
-});
-const Farm = mongoose.model('Farm', farmSchema);
+// 📦 감자 API 라우터 연결
+const apiRoutes = require('./api'); // 같은 폴더에 api.js가 있어야 함
+app.use('/api', apiRoutes);
 
-// ✅ 전체 사용자 조회
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
-    res.json({ success: true, users });
-  } catch (err) {
-    res.status(500).json({ success: false, message: '서버 오류' });
-  }
+// 🧪 감자 핑 테스트
+app.get('/감자', (req, res) => {
+  res.json({ 감자: "🥔 감자 살아있음! 서버도 잘 작동 중이오." });
 });
 
-// ✅ 개별 사용자 조회 (카카오 닉네임 기준)
-app.get('/api/userdata', async (req, res) => {
-  const nickname = req.query.nickname;
-  if (!nickname) return res.status(400).json({ success: false, message: '카카오 닉네임이 필요합니다.' });
-
-  try {
-    const user = await Farm.findOne({ nickname });
-    if (!user) return res.json({ success: false, message: '카카오 닉네임에 해당하는 사용자를 찾을 수 없습니다.' });
-
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ success: false, message: '서버 오류', error: err.message });
-  }
-});
-
-// ✅ 서버 시작
+// 🚀 감자 서버 실행
 app.listen(PORT, () => {
-  console.log(`서버 실행 중: http://localhost:${PORT}`);
+  console.log(`🚀 감자 서버 구동 중: http://localhost:${PORT}`);
 });
