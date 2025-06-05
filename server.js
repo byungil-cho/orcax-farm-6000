@@ -17,9 +17,9 @@ mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/orcax', {
 }).then(() => console.log('MongoDB 연결됨'))
   .catch(err => console.error('MongoDB 연결 실패:', err));
 
-// Farm 모델 정의 (간단한 스키마 예시)
+// Farm 모델 정의 (카카오 닉네임 기반 사용자 관리)
 const farmSchema = new mongoose.Schema({
-  nickname: String,
+  nickname: String, // ✅ 카카오 로그인에서 받은 닉네임
   water: Number,
   fertilizer: Number,
   token: Number,
@@ -27,7 +27,7 @@ const farmSchema = new mongoose.Schema({
 });
 const Farm = mongoose.model('Farm', farmSchema);
 
-// 기존 API
+// 전체 사용자 조회
 app.get('/api/users', async (req, res) => {
   try {
     const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
@@ -37,14 +37,14 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// 추가된 API
+// 카카오 닉네임으로 개별 사용자 조회
 app.get('/api/userdata', async (req, res) => {
   const nickname = req.query.nickname;
-  if (!nickname) return res.status(400).json({ success: false, message: '닉네임이 필요합니다.' });
+  if (!nickname) return res.status(400).json({ success: false, message: '카카오 닉네임이 필요합니다.' });
 
   try {
     const user = await Farm.findOne({ nickname });
-    if (!user) return res.json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+    if (!user) return res.json({ success: false, message: '카카오 닉네임에 해당하는 사용자를 찾을 수 없습니다.' });
 
     res.json({ success: true, user });
   } catch (err) {
