@@ -1,11 +1,10 @@
-
 const express = require('express');
 const router = express.Router();
-const Farm = require('../models/Farm');
-const Product = require('../models/Product');
-const ProductLog = require('../models/ProductLog');
+const Farm = require('./models/Farm'); // 실경로에 맞게 수정
+const Product = require('./models/Product');
+const ProductLog = require('./models/ProductLog');
 
-/* ========== 로그인 ========== */
+// 로그인 및 사용자 등록
 router.post('/login', async (req, res) => {
   const { nickname } = req.body;
   let user = await Farm.findOne({ nickname });
@@ -24,7 +23,7 @@ router.post('/login', async (req, res) => {
   res.json({ success: true, nickname });
 });
 
-/* ========== 사용자 전체 리스트 ========== */
+// 사용자 리스트
 router.get('/users', async (req, res) => {
   try {
     const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
@@ -34,18 +33,16 @@ router.get('/users', async (req, res) => {
   }
 });
 
-/* ========== ✨ 새로운 /userdata 라우터 추가 ========== */
+// 개별 유저 정보
 router.get('/userdata', async (req, res) => {
   const { nickname } = req.query;
   if (!nickname) {
     return res.status(400).json({ success: false, message: 'nickname이 필요함 이노마' });
   }
-
   const user = await Farm.findOne({ nickname });
   if (!user) {
     return res.status(404).json({ success: false, message: '없는 유저다 이놈아' });
   }
-
   res.json({
     success: true,
     user: {
@@ -61,7 +58,7 @@ router.get('/userdata', async (req, res) => {
   });
 });
 
-/* ========== 감자 가공소 ========== */
+// 감자 가공 공장
 router.post('/factory/process', async (req, res) => {
   const { nickname, productName } = req.body;
   const farm = await Farm.findOne({ nickname });
@@ -69,15 +66,9 @@ router.post('/factory/process', async (req, res) => {
     return res.json({ success: false, message: '감자가 부족합니다.' });
   }
 
-  const product = await Product.create({
-    productName,
-    owner: nickname,
-    isSold: false
-  });
-
+  const product = await Product.create({ productName, owner: nickname, isSold: false });
   farm.potatoCount -= 1;
   await farm.save();
-
   res.json({ success: true, product });
 });
 
@@ -86,7 +77,7 @@ router.get('/factory/products/:nickname', async (req, res) => {
   res.json({ success: true, products });
 });
 
-/* ========== 농사 기능 ========== */
+// 농사 기능
 router.get('/farm/status/:nickname', async (req, res) => {
   const farm = await Farm.findOne({ nickname: req.params.nickname });
   if (!farm) return res.json({ success: false });
@@ -150,7 +141,7 @@ router.post('/farm/buySeed', async (req, res) => {
   res.json({ success: true, seedPotatoUsed: quantity, potatoCount: farm.potatoCount, token: farm.token });
 });
 
-/* ========== 마켓 판매 ========== */
+// 마켓 판매
 router.post('/market/register', async (req, res) => {
   const { productId, nickname } = req.body;
   const product = await Product.findById(productId);
@@ -175,15 +166,12 @@ router.post('/market/register', async (req, res) => {
     timestamp: new Date()
   });
 
-  await Farm.findOneAndUpdate(
-    { nickname },
-    { $inc: { token: price } }
-  );
+  await Farm.findOneAndUpdate({ nickname }, { $inc: { token: price } });
 
   res.json({ success: true, tokenGain: price });
 });
 
-/* ========== 전광판 시세 제공 ========== */
+// 시세 정보
 router.get('/market', async (req, res) => {
   try {
     const products = await Product.aggregate([
@@ -211,7 +199,7 @@ router.get('/market', async (req, res) => {
   }
 });
 
-/* ========== 로그 확인 ========== */
+// 로그 확인
 router.get('/logs/:nickname', async (req, res) => {
   const logs = await ProductLog.find({ owner: req.params.nickname })
     .sort({ timestamp: -1 })
@@ -219,9 +207,9 @@ router.get('/logs/:nickname', async (req, res) => {
   res.json({ logs });
 });
 
-/* ========== 감자 상태 확인용 ========== */
+// 감자 상태
 router.get('/감자', (req, res) => {
-  res.json({ 감자: "🥔 감자 도착 완료. 서버도 살아있고 나도 이젠 지쳤다." });
+  res.json({ 감자: "🥔 감자 도착 완료. 서버도 살아있고 나도 살았다." });
 });
 
 module.exports = router;
