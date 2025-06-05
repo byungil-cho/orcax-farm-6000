@@ -184,6 +184,8 @@ router.get('/market', async (req, res) => {
       }
     ]);
 
+    const Farm = require('../model/farm');
+
     const total = products.reduce((sum, p) => sum + p.count, 0);
     const avg = total / (products.length || 1);
 
@@ -208,8 +210,8 @@ router.get('/logs/:nickname', async (req, res) => {
 });
 
 // 감자 상태
-router.get('/감자', (req, res) => {
-  res.json({ 감자: "🥔 감자 도착 완료. 서버도 살아있고 나도 살았다." });
+app.get('/api/ping', (req, res) => {
+  res.json({ success: true, message: "감자 서버 살아있음!" });
 });
 
 module.exports = router;
