@@ -6,3 +6,5 @@ db = client["orcax_db"]
 
 def get_db():
     return db
+
+users = db["users"]
