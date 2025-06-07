@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrcaX Storage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-stone-50 min-h-screen flex items-center justify-center px-4 py-6">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-6">
+
+    <div class="text-center">
+      <h1 class="text-2xl font-bold text-gray-700">📦 창고</h1>
+      <p class="text-sm text-gray-500">내 수확물과 가공품을 확인하고 경매장에 출고하세요.</p>
+    </div>
+
+    <div class="space-y-4 text-sm text-gray-800">
+
+      <div class="flex justify-between items-center">
+        <span>🥔 감자: <span id="potato-count">0</span></span>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <span>🌾 보리: <span id="barley-count">0</span></span>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <span>🍟 감자칩: <span id="chips-count">0</span></span>
+        <button onclick="listItem('chips')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs">출고</button>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <span>🍵 보리차: <span id="tea-count">0</span></span>
+        <button onclick="listItem('barley_tea')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs">출고</button>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <span>⛽ 연료: <span id="fuel-count">0</span></span>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <span>💰 토큰: <span id="token-count">0</span></span>
+      </div>
+
+    </div>
+
+    <div class="text-center text-xs text-gray-400 pt-4 border-t">
+      출고된 상품은 경매장에 등록됩니다.
+    </div>
+
+  </div>
+
+  <script>
+    const USER_ID = 'USER123';
+
+    async function updateInventory() {
+      const res = await fetch(`/user/${USER_ID}`);
+      const data = await res.json();
+      const inv = data.inventory || {};
+
+      document.getElementById("potato-count").innerText = inv.potato || 0;
+      document.getElementById("barley-count").innerText = inv.barley || 0;
+      document.getElementById("chips-count").innerText = inv.chips || 0;
+      document.getElementById("tea-count").innerText = inv.barley_tea || 0;
+      document.getElementById("fuel-count").innerText = inv.fuel || 0;
+      document.getElementById("token-count").innerText = data.token || 0;
+    }
+
+    async function listItem(itemType) {
+      const res = await fetch(`/auction/list`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: USER_ID, item_type: itemType })
+      });
+      const data = await res.json();
+      alert(data.message || '출고 완료!');
+      updateInventory();
+    }
+
+    updateInventory();
+  </script>
+</body>
+</html>
