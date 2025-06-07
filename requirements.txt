@@ -1,0 +1,5 @@
+# requirements.txt
+fastapi
+uvicorn[standard]
+pymongo
+python-dotenv
