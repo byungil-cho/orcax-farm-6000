@@ -1,0 +1,66 @@
+// 유저 닉네임 정보 불러오기
+const nickname = localStorage.getItem("nickname") || "보리대장";
+
+const seedCountEl = document.getElementById("seed_count");
+const fuelCountEl = document.getElementById("fuel_count");
+const barleyCountEl = document.getElementById("barley_count");
+const orcxCountEl = document.getElementById("orcx_count");
+const tiles = document.querySelectorAll(".tile");
+
+function initField() {
+  fetch(`/farm/records/${nickname}`)
+    .then(res => res.json())
+    .then(data => {
+      data.forEach((plot, idx) => {
+        if (plot.output_item !== "barley") return;
+        if (plot.status === "harvested") return;
+        const tile = tiles[idx];
+        tile.innerHTML = `<img src='/img/farm/${plot.status === "growing" ? "sprout_barley.png" : "barley.png"}' /><div>${plot.status === "growing" ? "성장중" : "수확가능"}</div>`;
+      });
+    });
+
+  fetch(`/user/${nickname}`)
+    .then(res => res.json())
+    .then(user => {
+      const inv = user.inventory || {};
+      seedCountEl.textContent = inv["barley_seed"] || 0;
+      fuelCountEl.textContent = inv["fuel"] || 0;
+      barleyCountEl.textContent = inv["barley"] || 0;
+      orcxCountEl.textContent = user.orcx || 0;
+    });
+}
+
+function plantSeed(index) {
+  fetch("/farm/plant", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nickname,
+      seed_item: "barley_seed",
+      seed_quantity: 1,
+      output_item: "barley",
+      output_quantity: 2,
+      farming_time_sec: 45
+    })
+  }).then(() => initField());
+}
+
+tiles.forEach((tile, idx) => {
+  tile.addEventListener("click", () => {
+    if (tile.textContent.includes("수확가능")) {
+      fetch(`/farm/status/${nickname}`).then(() => initField());
+    } else if (tile.textContent.includes("빈 밭") || tile.innerHTML === "") {
+      plantSeed(idx);
+    }
+  });
+});
+
+function refreshStatus() {
+  fetch(`/farm/status/${nickname}`).then(() => initField());
+}
+
+function goBack() {
+  window.location.href = "/index.html";
+}
+
+initField();
