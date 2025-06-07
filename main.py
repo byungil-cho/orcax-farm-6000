@@ -2,6 +2,9 @@
 from fastapi import FastAPI
 
 app = FastAPI()
+import os
+
+port = int(os.environ.get("PORT", 10000))
 
 @app.get("/")
 def root():
