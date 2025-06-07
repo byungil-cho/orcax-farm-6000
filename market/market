@@ -1,0 +1,6 @@
+fetch('/market/prices')
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("potatoPrice").value = data.potato;
+    document.getElementById("chipsPrice").value = data.chips;
+  });
