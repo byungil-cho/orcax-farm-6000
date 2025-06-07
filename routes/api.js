@@ -4,7 +4,7 @@ const Farm = require('./models/Farm');
 const Product = require('./models/Product');
 const ProductLog = require('./models/ProductLog');
 
-// 로그인 및 사용자 등록
+// 🔐 로그인 및 사용자 등록
 router.post('/login', async (req, res) => {
   const { nickname } = req.body;
   let user = await Farm.findOne({ nickname });
@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
   res.json({ success: true, nickname });
 });
 
-// 사용자 리스트
+// 👥 전체 사용자 목록
 router.get('/users', async (req, res) => {
   try {
     const users = await Farm.find({}, 'nickname water fertilizer token potatoCount');
@@ -33,7 +33,7 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// 개별 유저 정보
+// 🔍 개별 유저 정보
 router.get('/userdata', async (req, res) => {
   const { nickname } = req.query;
   if (!nickname) {
@@ -58,7 +58,7 @@ router.get('/userdata', async (req, res) => {
   });
 });
 
-// 감자 가공 공장
+// 🏭 감자 가공 공장
 router.post('/factory/process', async (req, res) => {
   const { nickname, productName } = req.body;
   const farm = await Farm.findOne({ nickname });
@@ -77,7 +77,7 @@ router.get('/factory/products/:nickname', async (req, res) => {
   res.json({ success: true, products });
 });
 
-// 농사 기능
+// 🌾 농사 상태 확인
 router.get('/farm/status/:nickname', async (req, res) => {
   const farm = await Farm.findOne({ nickname: req.params.nickname });
   if (!farm) return res.json({ success: false });
@@ -108,6 +108,7 @@ router.get('/farm/status/:nickname', async (req, res) => {
   });
 });
 
+// 🚜 무료 농사 사용
 router.post('/farm/useFree', async (req, res) => {
   const { nickname } = req.body;
   const farm = await Farm.findOne({ nickname });
@@ -118,6 +119,7 @@ router.post('/farm/useFree', async (req, res) => {
   res.json({ success: true, remaining: farm.freeFarmCount, potatoCount: farm.potatoCount });
 });
 
+// 🌱 씨감자 사용
 router.post('/farm/useSeed', async (req, res) => {
   const { nickname } = req.body;
   const farm = await Farm.findOne({ nickname });
@@ -128,6 +130,7 @@ router.post('/farm/useSeed', async (req, res) => {
   res.json({ success: true, seedPotato: farm.seedPotato, potatoCount: farm.potatoCount });
 });
 
+// 🛒 씨감자 구매 (토큰 차감 후 감자 획득)
 router.post('/farm/buySeed', async (req, res) => {
   const { nickname, quantity } = req.body;
   const cost = quantity;
@@ -141,7 +144,7 @@ router.post('/farm/buySeed', async (req, res) => {
   res.json({ success: true, seedPotatoUsed: quantity, potatoCount: farm.potatoCount, token: farm.token });
 });
 
-// 마켓 판매
+// 🏪 마켓 판매
 router.post('/market/register', async (req, res) => {
   const { productId, nickname } = req.body;
   const product = await Product.findById(productId);
@@ -171,7 +174,7 @@ router.post('/market/register', async (req, res) => {
   res.json({ success: true, tokenGain: price });
 });
 
-// 시세 정보
+// 💹 시세 정보
 router.get('/market', async (req, res) => {
   try {
     const products = await Product.aggregate([
@@ -199,7 +202,7 @@ router.get('/market', async (req, res) => {
   }
 });
 
-// 로그 확인
+// 📜 유저 로그 확인
 router.get('/logs/:nickname', async (req, res) => {
   const logs = await ProductLog.find({ owner: req.params.nickname })
     .sort({ timestamp: -1 })
