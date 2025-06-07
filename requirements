@@ -1,6 +1,4 @@
-fastapi
-uvicorn[standard]
-pymongo
-python-dotenv
-python-jose[cryptography]
-passlib[bcrypt]
+루트 디렉토리: .
+Dockerfile 경로: Dockerfile
+Docker 빌드 컨텍스트 디렉토리: .
+Docker 명령: .
